@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import io from 'socket.io-client'
 import { toast } from 'react-toastify'
-
-const socket = io('http://localhost:5000') 
+console.log(import.meta.env)
+const socket = io(import.meta.env.VITE_SOCKET_URL)
 
 const SpeechToText = () => {
   const [text, setText] = useState('')
@@ -16,7 +16,7 @@ const SpeechToText = () => {
     socket.on('receiveData', (data) => {
       console.log('Data from server:', data)
       setText(data)
-      startListening() 
+      startListening()
     })
 
     return () => {
@@ -74,7 +74,7 @@ const SpeechToText = () => {
     clearTimeout(silenceTimerRef.current)
     silenceTimerRef.current = setTimeout(() => {
       stopListening()
-    }, 3000)
+    }, 2000)
   }
 
   return (
