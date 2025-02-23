@@ -1,8 +1,19 @@
-import React from "react";
+import React, { useContext, useEffect } from "react";
+import UserContext from "../context/user/UserContext";
+import { use } from "react";
+import { useNavigate } from "react-router-dom";
 
 const GLogin = () => {
+    const nav = useNavigate();
+    const {getUser,currUser} = useContext(UserContext);
+    useEffect(() => {
+        getUser();
+    }, []);
+    useEffect(() => {
+        if(currUser) nav("/upload");
+    }, [currUser]);
   const handleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_SERVER_URL}/auth/google`;
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;
   };
 
   return (

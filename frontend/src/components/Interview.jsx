@@ -15,7 +15,7 @@ const Interview = () => {
     }
 
     if (!socketRef.current) {
-      const newSocket = io("http://localhost:5000", { query: { voiceId } });
+      const newSocket = io("http://localhost:3001", { query: { voiceId } });
       socketRef.current = newSocket;
 
       newSocket.on("tts-chunk", async ({ audio }) => {

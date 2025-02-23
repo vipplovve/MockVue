@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const passport = require("passport");
+const User = require("../models/User");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
 passport.use(
@@ -12,7 +13,15 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
         try {
-        console.log("Profile:", profile);
+        // create user in the database
+
+        const user =  await User.findOne({userName: profile.name.givenName});
+        if(user){
+            return done(null, user);
+        }
+        await User.create({
+          userName: profile.name.givenName
+        });
         return done(null, profile);
       } catch (error) {
         console.error("Error saving user:", error);

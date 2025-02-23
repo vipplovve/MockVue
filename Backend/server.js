@@ -6,7 +6,9 @@ const passport = require("passport");
 require("dotenv").config();
 const { PollyClient, SynthesizeSpeechCommand } = require("@aws-sdk/client-polly");
 const cors = require("cors");
+const connectToMongo = require("./config/db");
 
+connectToMongo();
 
 const app = express();
 const server = http.createServer(app);
@@ -43,12 +45,13 @@ app.use(
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: { secure: false },
 }));
 
 app.use(passport.initialize());
 app.use(passport.session());
+
 app.use("/auth", require("./routes/auth"));
 app.use("/api", require("./routes/resume"));
 

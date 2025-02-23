@@ -1,17 +1,10 @@
-import React, {useEffect, useState } from "react";
+import React, {useState } from "react";
 import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
+import { useNavigate } from "react-router-dom";
 
 const ResumeUploader = () => {
-  useEffect(() => {
-    axios.get("http://localhost:3000/auth/user", { withCredentials: true })
-      .then((res) => {
-        console.log(res.data);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  }, [])
-  
+  const nav =  useNavigate();
   const [file, setFile] = useState(null);
   const [parsedText, setParsedText] = useState("");
   const [error, setError] = useState("");
@@ -31,11 +24,8 @@ const ResumeUploader = () => {
     formData.append("resume", file);
 
     try {
-      const { data } = await axios.post("http://localhost:3000/api/parse", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      console.log(data);
-      setParsedText(data.text);
+      const { data } = await axiosInstance.post("/api/parse", formData);
+      nav("/interview");
     } catch (err) {
       setError("Error uploading file. Please try again.");
       console.error(err);
