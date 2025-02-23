@@ -13,7 +13,7 @@ def extract_text_from_pdf(pdf_path):
     return text
 
 if __name__ == "__main__":
-    pdf_path = "Uploads/Resume.pdf"
+    pdf_path = sys.argv[1]
     text = extract_text_from_pdf(pdf_path)
     print(text)
     os.remove(pdf_path)
