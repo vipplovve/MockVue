@@ -10,6 +10,7 @@ const {
 } = require("@aws-sdk/client-polly");
 const cors = require("cors");
 const connectToMongo = require("./config/db");
+const Interview = require("./models/Interview");
 
 connectToMongo();
 
@@ -46,7 +47,6 @@ app.use("/auth", require("./routes/auth"));
 app.use("/api", require("./routes/resume"));
 app.use("/genAi", require("./routes/genAi"));
 
-// AWS Polly Client (Text-to-Speech)
 const pollyClient = new PollyClient({
   region: "ap-south-1",
   credentials: {
@@ -55,63 +55,56 @@ const pollyClient = new PollyClient({
   },
 });
 
-// Sample interview questions
-const questions = [
-  { id: 1, text: "Tell me about yourself" },
-  { id: 2, text: "What are your strengths?" },
-  { id: 3, text: "Describe a challenge you faced" },
-];
+const speakQuestion = async (socket, voiceId, question) => {
+  const command = new SynthesizeSpeechCommand({
+    OutputFormat: "mp3",
+    Text: question,
+    VoiceId: voiceId || "Joanna",
+  });
+  try {
+    const { AudioStream } = await pollyClient.send(command);
+    const chunks = [];
+    for await (const chunk of AudioStream) {
+      chunks.push(chunk);
+    }
+    const audioBuffer = Buffer.concat(chunks);
+    socket.emit("tts-chunk", { audio: audioBuffer.toString("base64") });
+  } catch (error) {
+    console.error("Polly Error:", error);
+  }
+};
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  let currentQuestionIndex = 0;
+  const ques = [];
+  const currentQuestionIndex = 0;
 
-  socket.emit("receiveData", "Start speaking...");
-
-  // Function to send a question using AWS Polly
-  async function speakQuestion(voiceId) {
-    if (currentQuestionIndex >= questions.length) {
-      console.log("✅ All questions completed.");
-      socket.emit("interview-end", { message: "Interview completed!" });
+  socket.on("start-interview", ({ interviewId }) => {
+    const interview = Interview.findById(interviewId);
+    if (!interview) {
+      console.error("Interview not found");
       return;
     }
+    ques = interview.questions;
+  });
 
-    const question = questions[currentQuestionIndex].text;
-    console.log(`🎙️ Speaking Q${currentQuestionIndex + 1}: ${question}`);
-
-    const command = new SynthesizeSpeechCommand({
-      OutputFormat: "mp3",
-      Text: question,
-      VoiceId: voiceId || "Joanna",
-    });
-
-    try {
-      const { AudioStream } = await pollyClient.send(command);
-
-      // Convert Stream to Buffer
-      const chunks = [];
-      for await (const chunk of AudioStream) {
-        chunks.push(chunk);
-      }
-      const audioBuffer = Buffer.concat(chunks);
-
-      // Emit base64 encoded audio
-      socket.emit("tts-chunk", { audio: audioBuffer.toString("base64") });
-    } catch (error) {
-      console.error("❌ Polly Error:", error);
+  socket.on("next-ques", ({ voiceId }) => {
+    if (currentQuestionIndex >= ques.length) {
+      socket.emit("interview-ended", { message: "Interview completed!" });
+      return;
     }
-  }
-
-  // Start the interview
-  socket.on("start-interview", (data) => {
-    console.log("▶️ Starting interview...");
-    speakQuestion(data.voiceId);
+    speakQuestion(socket, voiceId, ques[currentQuestionIndex]);
   });
 
-  socket.on("transcribedText", (data) => {
-    console.log("Received from client:", data);
+  socket.on("answer", ({answer}) => {
+      ques[currentQuestionIndex].answer = answer;
+      currentQuestionIndex++;
   });
+
+  socket.on("end-interview", async ({interviewId}) => {
+      await Interview.findByIdAndUpdate(interviewId, {questions: ques});
+  }); 
 
   socket.on("disconnect", () => {
     console.log("User disconnected");

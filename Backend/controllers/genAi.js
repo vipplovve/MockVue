@@ -3,6 +3,7 @@ const User = require("../models/User");
 const { exec } = require("child_process");
 const path = require("path");
 const os = require("os");
+const Interview = require("../models/Interview");
 
 const API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
@@ -84,9 +85,7 @@ exports.generateQuestions = async (req, res) => {
     const resumeText = user.parsedResume;
 
     if (!role || !difficulty || !count) {
-      return res
-        .status(400)
-        .json({ error: "Params missing" });
+      return res.status(400).json({ error: "Params missing" });
     }
 
     const skillExtractionPrompt = `
@@ -132,8 +131,6 @@ exports.generateQuestions = async (req, res) => {
       contents: [{ parts: [{ text: prompt }] }],
     });
 
-    console.log("Raw API Response:", response.data);
-
     let responseText =
       response.data?.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
 
@@ -150,13 +147,22 @@ exports.generateQuestions = async (req, res) => {
       return res.status(500).json({ error: "Invalid response format from AI" });
     }
 
-    res.json({ questions });
+    await Interview.create({
+      userName,
+      role,
+      difficulty,
+      questions: questions.map((q) => ({
+        question: q.question,
+        answer: "",
+      })),
+    });
+
+    res.json({ message: "Questions generated successfully" });
   } catch (error) {
     console.error("API Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 
 exports.evaluateAnswer = async (req, res) => {
   try {
