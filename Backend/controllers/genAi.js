@@ -44,49 +44,27 @@ exports.categorizeResume = async (req, res) => {
   try {
     // const { userName } = req.user;
 
-    // if (!userName) {
-    //   return res.status(400).json({ error: "Username is required" });
-    // }
+    const userName = "Sunpreet";
 
-    // const user = await User.findOne({ userName });
+    if (!userName) {
+      return res.status(400).json({ error: "Username is required" });
+    }
 
-    // if (!user || !user.resume) {
-    //   return res.status(404).json({ error: "User or resume not found" });
-    // }
-    // const resumePath = path.join(__dirname, "../uploads", user.resume);
+    const user = await User.findOne({ userName });
 
-    const resumePath = path.join(__dirname, "../uploads", "resume.pdf"); // for testing
-    const pythonScript = path.join(__dirname, "../ResumeParser.py");
-    const pythonCommand =
-      os.platform() === "win32" ? "python" : "venv/bin/python3";
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
-    exec(
-      `${pythonCommand} "${pythonScript}" "${resumePath}"`,
-      async (err, stdout, stderr) => {
-        if (err) {
-          console.error("Python script error:", stderr);
-          return res
-            .status(500)
-            .json({ error: `Error executing Python script: ${stderr}` });
-        }
+    const resumeText = user.parsedResume;
 
-        const extractedText = stdout.trim();
-        if (!extractedText) {
-          return res
-            .status(500)
-            .json({ error: "Failed to extract resume text" });
-        }
+    const prompt = `Analyze the following resume and suggest the most suitable role from: Software Engineer, Data Scientist, ML Engineer, DevOps Engineer. Resume:\n${resumeText}`;
 
-        const prompt = `Analyze the following resume and suggest the most suitable role from: Software Engineer, Data Scientist, ML Engineer, DevOps Engineer. Resume:\n${extractedText}`;
+    const roleCategory = await getRoleFromGemini(prompt);
 
-        const roleCategory = await getRoleFromGemini(prompt);
-
-        res.json({
-          message: "Resume uploaded successfully",
-          role: roleCategory,
-        });
-      }
-    );
+    res.json({
+      role: roleCategory,
+    });
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
   }
@@ -95,15 +73,50 @@ exports.categorizeResume = async (req, res) => {
 exports.generateQuestions = async (req, res) => {
   try {
     const { role, difficulty, count } = req.body;
+    // const userName = req.user.userName;
+    const userName = "Sunpreet";
+    const user = await User.findOne({ userName });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const resumeText = user.parsedResume;
 
     if (!role || !difficulty || !count) {
       return res
         .status(400)
-        .json({ error: "Role, difficulty, and count are required" });
+        .json({ error: "Params missing" });
     }
 
+    const skillExtractionPrompt = `
+      Extract key technical skills from the following resume text:
+      Resume: ${resumeText}
+      Respond only with a **comma-separated list** of skills (e.g., JavaScript, React, Node.js).
+    `;
+
+    const skillResponse = await axios.post(GEMINI_URL, {
+      contents: [{ parts: [{ text: skillExtractionPrompt }] }],
+    });
+
+    let extractedSkills =
+      skillResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    extractedSkills = extractedSkills
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    const skillsArray = extractedSkills.split(",").map((skill) => skill.trim());
+
+    const generalQuestionsCount = Math.ceil(count / 2);
+    const skillBasedQuestionsCount = count - generalQuestionsCount;
+
     const prompt = `
-      Generate ${count} interview questions for a ${role} at ${difficulty} level.
+      Generate ${generalQuestionsCount} general technical interview questions for a ${role} at ${difficulty} level.
+      Then generate ${skillBasedQuestionsCount} technical questions based on these skills: ${skillsArray.join(
+      ", "
+    )}.
+      Questions Should be short and to the point and verbally anwserable.
       Format the response as a **valid JSON array** with only questions.
       Example:
       [
@@ -143,6 +156,7 @@ exports.generateQuestions = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 exports.evaluateAnswer = async (req, res) => {
   try {

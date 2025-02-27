@@ -6,10 +6,14 @@ const userSchema = new Schema({
     type: String,
     required: true,
   },
-  resume:{
+  resume: {
     type: String,
     required: false,
-  }
+  },
+  parsedResume: {
+    type: String,
+    required: false,
+  },
 });
 
 module.exports = mongoose.model("Users", userSchema);

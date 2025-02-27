@@ -2,6 +2,7 @@ const fs = require("fs");
 const os = require("os");
 const { exec } = require("child_process");
 const path = require("path");
+const User = require("../models/User");
 
 const parseResume = async (req, res) => {
   if (!req.file) {
@@ -14,21 +15,30 @@ const parseResume = async (req, res) => {
 
   fs.renameSync(tempPath, newPath);
 
-  console.log(`File saved as: ${newPath}`);
-
   const pythonScript = path.join(__dirname, "../ResumeParser.py");
-  const pythonCommand = os.platform() === "win32" ? "python" : "python3"; 
+  const pythonCommand =
+    os.platform() === "win32" ? "python" : "venv/bin/python3";
 
-  exec(`${pythonCommand} "${pythonScript}" "${newPath}"`, (err, stdout, stderr) => {
-    if (err) {
-      console.error("Python script error:", stderr);
-      return res.status(500).send(`Error executing Python script: ${stderr}`);
+  exec(
+    `${pythonCommand} "${pythonScript}" "${newPath}"`,
+    async (err, stdout, stderr) => {
+      if (err) {
+        console.error("Python script error:", stderr);
+        return res.status(500).send(`Error executing Python script: ${stderr}`);
+      }
+
+      const extractedText = stdout.trim();
+      if (!extractedText) {
+        return res.status(500).send("Failed to extract resume text");
+      }
+
+      await User.findOneAndUpdate(
+        { userName: req.user.userName },
+        { resume: originalname, parsedResume: extractedText }
+      );
+      res.send({ text: "uploaded Sucessfully" });
     }
-    console.log("Extracted Text:\n", stdout);
-    console.log("Python script finished. sending response...");
-    // send parsed text to classification model
-    res.send({ text: "uploaded Sucessfully" });
-  });
+  );
 };
 
 module.exports = { parseResume };
