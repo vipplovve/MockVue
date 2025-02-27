@@ -13,8 +13,6 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
         try {
-        // create user in the database
-
         const user =  await User.findOne({userName: profile.name.givenName});
         if(user){
             return done(null, user);
