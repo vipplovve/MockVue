@@ -77,34 +77,36 @@ const speakQuestion = async (socket, voiceId, question) => {
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  const ques = [];
-  const currentQuestionIndex = 0;
+  let ques = [];
+  let currentQuestionIndex = 0;
 
-  socket.on("start-interview", ({ interviewId }) => {
-    const interview = Interview.findById(interviewId);
+  socket.on("start-interview", async ({ interviewId }) => {
+    const interview = await Interview.findById(interviewId);
     if (!interview) {
       console.error("Interview not found");
       return;
     }
     ques = interview.questions;
+    socket.emit("interview-started", { message: "Interview started!" });
   });
 
   socket.on("next-ques", ({ voiceId }) => {
-    if (currentQuestionIndex >= ques.length) {
+    speakQuestion(socket, voiceId, ques[currentQuestionIndex].question);
+  });
+
+  socket.on("answer", ({ answer }) => {
+    ques[currentQuestionIndex].answer = answer;
+    currentQuestionIndex++;
+    console.log(answer)
+    // if (currentQuestionIndex >= ques.length)
       socket.emit("interview-ended", { message: "Interview completed!" });
-      return;
-    }
-    speakQuestion(socket, voiceId, ques[currentQuestionIndex]);
+    // else 
+    //   socket.emit("answer-received", { message: "Answer received!" });
   });
 
-  socket.on("answer", ({answer}) => {
-      ques[currentQuestionIndex].answer = answer;
-      currentQuestionIndex++;
+  socket.on("end-interview", async ({ interviewId }) => {
+    await Interview.findByIdAndUpdate(interviewId, { questions: ques });
   });
-
-  socket.on("end-interview", async ({interviewId}) => {
-      await Interview.findByIdAndUpdate(interviewId, {questions: ques});
-  }); 
 
   socket.on("disconnect", () => {
     console.log("User disconnected");

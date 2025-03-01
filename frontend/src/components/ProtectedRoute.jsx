@@ -5,10 +5,10 @@ import UserContext from "../context/user/UserContext";
 
 const ProtectedRoute = ({ element }) => {
   const { currUser } = useContext(UserContext);
+  return element;
   if (!currUser) {
     return <Navigate to="/auth" />;
   }
-  return element;
 };
 
 export default ProtectedRoute;

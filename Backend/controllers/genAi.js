@@ -152,7 +152,7 @@ exports.generateQuestions = async (req, res) => {
       role,
       difficulty,
       questions: questions.map((q) => ({
-        question: q.question,
+        question: q,
         answer: "",
       })),
     });

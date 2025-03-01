@@ -4,7 +4,7 @@ import axiosInstance from "../../utils/axiosInstance";
 
 const UserState = (props) => {
   const [currUser, setCurrUser] = useState(null);
-
+  const [role, setRole] = useState('Software Engineer');
   const getUser = async () => {
     try {
       const { data } = await axiosInstance.get("/auth/user");
@@ -15,7 +15,7 @@ const UserState = (props) => {
   };
 
   return (
-    <UserContext.Provider value={{ currUser, setCurrUser, getUser }}>
+    <UserContext.Provider value={{ currUser, setCurrUser, getUser, role, setRole }}>
       {props.children}
     </UserContext.Provider>
   );
