@@ -12,7 +12,7 @@ const RippleComponent = () => {
 
   // Adjusted threshold to reduce sensitivity
   const threshold = 0.05; // Increased from a lower value (e.g., 0.005) to 0.05
-  const cooldown = 200; // Time (ms) between ripples
+  const cooldown = 200; 
 
   useEffect(() => {
     if (isRecording) {
