@@ -1,0 +1,11 @@
+# 🔹 Python Virtual Environment
+venv/
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.log
+.DS_Store
+
+# 🔹 Large GloVe Embeddings File
+/embeddings/glove.6B.300d.txt
