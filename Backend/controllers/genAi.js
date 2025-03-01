@@ -12,6 +12,8 @@ const getRoleFromGemini = async (resumeText) => {
   try {
     const allowedRoles = [
       "Software Engineer",
+      "FrontEnd Developer",
+      "BackEnd Developer",
       "Data Scientist",
       "ML Engineer",
       "Hardware Engineer",
@@ -41,10 +43,60 @@ const getRoleFromGemini = async (resumeText) => {
   }
 };
 
+const getRolesFromGemini = async (resumeText) => {
+  try {
+    const allowedRoles = [
+      "Software Engineer",
+      "ML Engineer",
+      "BackEnd Developer",
+      "Data Scientist",
+      "Hardware Engineer",
+      "FrontEnd Developer",
+      "DevOps Engineer",
+    ];
+
+    const prompt = `
+      Based on the following resume, determine the **two** most relevant job roles.
+      Choose only from the following options: ${allowedRoles.join(", ")}.
+      Respond **ONLY** in JSON array format (no explanations, no text, just JSON): 
+
+      ["Role1", "Role2"]
+      
+      Resume:
+      ${resumeText}
+    `;
+
+    const response = await axios.post(GEMINI_URL, {
+      contents: [{ parts: [{ text: prompt }] }],
+    });
+
+    let rolesText =
+      response.data?.candidates?.[0]?.content?.parts?.[0]?.text.trim();
+
+    rolesText = rolesText.replace(/```json|```/g, "").trim();
+
+    let roles = [];
+    try {
+      roles = JSON.parse(rolesText);
+    } catch (err) {
+      console.error("Error parsing Gemini response:", rolesText, err);
+      return ["Uncategorized"];
+    }
+
+    // ✅ Ensure valid roles
+    roles = roles.filter((role) => allowedRoles.includes(role));
+
+    return roles.length > 0 ? roles : ["Uncategorized"];
+  } catch (error) {
+    console.error("Gemini API error:", error);
+    return ["Uncategorized"];
+  }
+};
+
+
+
 exports.categorizeResume = async (req, res) => {
   try {
-    // const { userName } = req.user;
-
     const userName = "Sunpreet";
 
     if (!userName) {
@@ -58,24 +110,22 @@ exports.categorizeResume = async (req, res) => {
     }
 
     const resumeText = user.parsedResume;
-
-    const prompt = `Analyze the following resume and suggest the most suitable role from: Software Engineer, Data Scientist, ML Engineer, DevOps Engineer. Resume:\n${resumeText}`;
-
-    const roleCategory = await getRoleFromGemini(prompt);
+    const roleCategories = await getRolesFromGemini(resumeText);
+    console.log(roleCategories);
 
     res.json({
-      role: roleCategory,
+      roles: roleCategories,
     });
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-exports.generateQuestions = async (req, res) => {
+exports.generateInterview = async (req, res) => {
   try {
     const { role, difficulty, count } = req.body;
-    // const userName = req.user.userName;
-    const userName = "Sunpreet";
+    console.log(role, difficulty, count);
+    const userName = req.user.userName;
     const user = await User.findOne({ userName });
 
     if (!user) {
@@ -147,7 +197,7 @@ exports.generateQuestions = async (req, res) => {
       return res.status(500).json({ error: "Invalid response format from AI" });
     }
 
-    await Interview.create({
+    const interview = await Interview.create({
       userName,
       role,
       difficulty,
@@ -156,8 +206,8 @@ exports.generateQuestions = async (req, res) => {
         answer: "",
       })),
     });
-
-    res.json({ message: "Questions generated successfully" });
+    const interviewId = interview._id;
+    res.json({interviewId,message: "Questions generated successfully" });
   } catch (error) {
     console.error("API Error:", error);
     res.status(500).json({ error: "Internal Server Error" });

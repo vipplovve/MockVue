@@ -1,10 +1,10 @@
 const express = require("express");
 const isAuth = require("../middlewares/isAuth");
-const { categorizeResume, generateQuestions } = require("../controllers/genAi");
+const { categorizeResume, generateInterview } = require("../controllers/genAi");
 
 const router = express.Router();
 
 router.get("/categorize",categorizeResume);
-router.post("/genQues",generateQuestions);
+router.post("/genInterview",generateInterview);
 
 module.exports = router;
