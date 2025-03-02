@@ -92,17 +92,18 @@ io.on("connection", (socket) => {
   });
 
   socket.on("next-ques", ({ voiceId }) => {
-    speakQuestion(socket, voiceId, ques[currentQuestionIndex].question);
+    socket.emit("interview-ended", { message: "Interview completed!" });
+    // speakQuestion(socket, voiceId, ques[currentQuestionIndex].question);
   });
 
   socket.on("answer", ({ answer }) => {
     ques[currentQuestionIndex].answer = answer;
     currentQuestionIndex++;
     console.log(answer)
-    // if (currentQuestionIndex >= ques.length)
+    if (currentQuestionIndex >= ques.length)
       socket.emit("interview-ended", { message: "Interview completed!" });
-    // else 
-    //   socket.emit("answer-received", { message: "Answer received!" });
+    else 
+      socket.emit("answer-received", { message: "Answer received!" });
   });
 
   socket.on("end-interview", async ({ interviewId }) => {
