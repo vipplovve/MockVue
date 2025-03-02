@@ -8,38 +8,39 @@ const Interview = require("../models/Interview");
 const API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
-const getRoleFromGemini = async (resumeText) => {
+exports.getSkillsandObjective = async (resumeText) => {
   try {
-    const allowedRoles = [
-      "Software Engineer",
-      "FrontEnd Developer",
-      "BackEnd Developer",
-      "Data Scientist",
-      "ML Engineer",
-      "Hardware Engineer",
-      "DevOps Engineer",
-    ];
-
     const prompt = `
-      Based on the following resume, determine the best matching job role.
-      Choose only from the following options: ${allowedRoles.join(", ")}.
-      Respond with only the job role name and nothing else.
-      
-      Resume:
-      ${resumeText}
+      Extract key technical skills and predict the general career objective of the candidate from the following resume text:
+      Resume: ${resumeText}
+      Respond only with a **comma-separated string** of skills (e.g., JavaScript, React, Node.js) and the career objective.
+      Format the response as a **valid JSON object** with only skills and career objective.
+      Example:
+      {
+        "career_objective": "I love data science and analytics",
+        "skills": "Python, SQL, Machine Learning"
+      }
     `;
-
     const response = await axios.post(GEMINI_URL, {
       contents: [{ parts: [{ text: prompt }] }],
     });
 
-    const role =
-      response.data?.candidates?.[0]?.content?.parts?.[0]?.text.trim();
+    let responseText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    responseText = responseText.replace(/```json|```/g, "").trim();
 
-    return allowedRoles.includes(role) ? role : "Uncategorized";
-  } catch (error) {
+    let skillsAndObjective = {};
+    try {
+      skillsAndObjective = JSON.parse(responseText);
+    } catch (err) {
+      console.error("Error parsing Gemini response:", responseText, err);
+      return { career_objective: "", skills: "" };
+    }
+
+    return skillsAndObjective;
+  }
+  catch (error) {
     console.error("Gemini API error:", error);
-    return "Uncategorized";
+    return { career_objective: "", skills: "" };
   }
 };
 

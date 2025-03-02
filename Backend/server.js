@@ -46,6 +46,7 @@ app.use(passport.session());
 app.use("/auth", require("./routes/auth"));
 app.use("/api", require("./routes/resume"));
 app.use("/genAi", require("./routes/genAi"));
+app.use("/ML", require("./routes/ML"));
 
 const pollyClient = new PollyClient({
   region: "ap-south-1",

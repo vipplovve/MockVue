@@ -48,7 +48,7 @@ const ResumeUploader = () => {
       setLoadingMSG("parsing resume..."); 
       await axiosInstance.post("/api/parse", formData);
       setLoadingMSG("categorizing resume..."); 
-      const {data} = await axiosInstance.get("/genAi/categorize");
+      const {data} = await axiosInstance.get("/ML/categorize");
       setRoles(data.roles);
       setLoading(false);
       setShowRoles(true);
