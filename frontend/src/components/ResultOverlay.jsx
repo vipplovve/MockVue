@@ -34,7 +34,7 @@ export const ResultOverlay = ({ isOpen, onClose, loading, setLoading, loadingMSG
     return (
         <>
             {isOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex justify-center">
+                <div className="fixed inset-0 bg-gray-800 bg-gradient-to-b from-gray-900 via-black to-black z-50 flex justify-center">
                     <button className="absolute top-4 left-4 text-white text-2xl font-bold" onClick={onClose}>
                         &times;
                     </button>

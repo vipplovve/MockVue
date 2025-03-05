@@ -159,8 +159,8 @@ const Interview = () => {
 
   return (
     <div className={`flex flex-col items-center ${showNewAvatar ? ' pt-36' : 'pt-16'} h-[calc(100vh-4rem)] bg-gray-800 bg-gradient-to-b from-gray-900 via-black to-black`}>
-      {!showNewAvatar && <h1 className="text-4xl font-bold text-gray-200 mb-8">Role: {InRole}</h1>}
-      <div className="relative flex items-center justify-center w-full h-64">
+      {!showNewAvatar && <h1 className="text-4xl font-extrabold tracking-tight text-center text-gray-200 mb-8">Role: {InRole}</h1>}
+      <div className="relative flex items-center justify-center w-full h-64 text-gray-200">
         <div
           className={`flex flex-col justify-center items-center gap-2 transition-transform duration-500 ${
             showNewAvatar ? 'translate-x-[-350px]' : ''
@@ -169,15 +169,15 @@ const Interview = () => {
           <img
             src={`/${voiceId}.png`}
             className={`w-64 h-64 border-4 ${
-              isNarrating ? 'border-blue-800' : 'border-gray-800'
+              isNarrating ? 'border-blue-800' : 'border-gray-200'
             }  rounded-full  `}
             alt="Interviewer Avatar"
           />
           {showNewAvatar && <p className="text-xl font-bold">AI Interviewer</p>}
           {isNarrating && (
-            <div className="absolute bottom-[-30%] text-lg italic text-gray-700 flex items-center justify-center gap-2">
+            <div className="absolute bottom-[-30%] text-lg italic text-gray-200 flex items-center justify-center gap-2">
               <svg
-                class="h-8 w-8 text-slate-800"
+                class="h-8 w-8 text-gray-200"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -198,19 +198,19 @@ const Interview = () => {
             <img
               src="/user.png"
               className={`w-64 h-64 border-4 ${
-                isSpeaking ? 'border-blue-800' : 'border-gray-800'
+                isSpeaking ? 'border-blue-800' : 'border-gray-200'
               } rounded-full `}
               alt="User Avatar"
             />
             <p className="text-xl font-bold">You</p>
-            <p className="absolute bottom-[-30%] text-lg italic text-gray-700">{userCaption}</p>
+            <p className="absolute bottom-[-30%] text-lg italic text-gray-200">{userCaption}</p>
           </div>
         )}
       </div>
       {!showNewAvatar && (
         <>
-          <h1 className="mt-10 text-2xl text-gray-200 font-bold">Select AI Interviewer</h1>
-          <select className='text-gray-200' value={voiceId} onChange={(e) => setVoiceId(e.target.value)}>
+          <h1 className="mt-10 text-3xl text-gray-200 font-extrabold tracking-tight text-center">Select AI Interviewer</h1>
+          <select className='text-gray-200  ' value={voiceId} onChange={(e) => setVoiceId(e.target.value)}>
             <option value="Joanna">US Female (Joanna)</option>
             <option value="Matthew">US Male (Matthew)</option>
             <option value="Amy">British Female (Amy)</option>
@@ -220,20 +220,23 @@ const Interview = () => {
       )}
 
       {showNewAvatar && (
-        <div className="absolute top-40 left-1/2  h-1/2 border-l-3 border-gray-800"></div>
+        <div className="absolute top-40 left-1/2  h-1/2 border-l-3 border-gray-200"></div>
       )}
 
       {!showNewAvatar && (
-        <button
-          onClick={handleStart}
-          className="mt-8 px-6 py-3 bg-blue-600 text-white text-lg rounded-lg hover:bg-blue-700 transition"
-          disabled={countdown !== null}
-        >
-          Start Interview
-        </button>
+        <button  onClick={handleStart} disabled={countdown !== null} className="mt-4 overflow-hidden p-3 bg-gray-500 text-white border-none rounded-md text-xl font-bold cursor-pointer relative z-10 group">
+        Start Interview
+        <span className="absolute w-36 h-32 -top-8 -left-2 bg-white rotate-12 transform scale-x-0 group-hover:scale-x-100 transition-transform group-hover:duration-500 duration-1000 origin-left" />
+        <span className="absolute w-36 h-32 -top-8 -left-2 bg-blue-700 rotate-12 transform scale-x-0 group-hover:scale-x-90 transition-transform group-hover:duration-700 duration-700 origin-left" />
+        <span className="absolute w-36 h-32 -top-8 -left-2 bg-blue-900 rotate-12 transform scale-x-0 group-hover:scale-x-50 transition-transform group-hover:duration-1000 duration-500 origin-left" />
+        <span className="group-hover:opacity-100 group-hover:duration-1000 duration-100 opacity-0 absolute top-2.5 left-6 z-10 text-center">
+        Ready!
+        </span>
+      </button>
+        
       )}
       {countdown !== null && countdown !== 0 && (
-        <p className="mt-32 text-3xl font-bold"> Starting in {countdown}</p>
+        <p className="mt-32 text-3xl font-bold text-gray-200"> Starting in {countdown}</p>
       )}
       <ResultOverlay
         isOpen={isOpen}
