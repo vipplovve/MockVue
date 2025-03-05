@@ -15,7 +15,7 @@ const App = () => {
   return (
     <Router>
       <Navbar2/>
-      <div className="mt-16">
+      <div className="mt-16 ">
       <Routes>
         <Route exact path="/" element={<Home/>} />
         <Route exact path="/upload" element={<ProtectedRoute element ={<ResumeUploader />}/>} />

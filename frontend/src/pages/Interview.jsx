@@ -158,8 +158,8 @@ const Interview = () => {
   }
 
   return (
-    <div className={`flex flex-col items-center ${showNewAvatar ? ' mt-54' : 'mt-28'} h-screen`}>
-      {!showNewAvatar && <h1 className="text-4xl font-bold mb-8">Role: {InRole}</h1>}
+    <div className={`flex flex-col items-center ${showNewAvatar ? ' pt-36' : 'pt-16'} h-[calc(100vh-4rem)] bg-gray-800 bg-gradient-to-b from-gray-900 via-black to-black`}>
+      {!showNewAvatar && <h1 className="text-4xl font-bold text-gray-200 mb-8">Role: {InRole}</h1>}
       <div className="relative flex items-center justify-center w-full h-64">
         <div
           className={`flex flex-col justify-center items-center gap-2 transition-transform duration-500 ${
@@ -209,8 +209,8 @@ const Interview = () => {
       </div>
       {!showNewAvatar && (
         <>
-          <h1 className="mt-10 text-2xl font-bold">Select AI Interviewer</h1>
-          <select value={voiceId} onChange={(e) => setVoiceId(e.target.value)}>
+          <h1 className="mt-10 text-2xl text-gray-200 font-bold">Select AI Interviewer</h1>
+          <select className='text-gray-200' value={voiceId} onChange={(e) => setVoiceId(e.target.value)}>
             <option value="Joanna">US Female (Joanna)</option>
             <option value="Matthew">US Male (Matthew)</option>
             <option value="Amy">British Female (Amy)</option>

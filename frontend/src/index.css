@@ -9,10 +9,9 @@
     align-items: center;
     justify-content: flex-end;
     padding: 10px;
-    background: linear-gradient(135deg, #6dd5ed, #2193b0);
     border-radius: 15px;
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-    height: calc(var(--folder-H) * 2.3);
+    height: calc(var(--folder-H) * 2.5);
     position: relative;
   }
   
@@ -125,19 +124,13 @@
 
   
   .upload-button {
-    margin-top: 10px;
+    margin-top: 20px;
     padding: 10px 20px;
-    background: #ff6f56;
-    color: white;
     font-size: 1em;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     transition: background 0.3s ease;
-  }
-  
-  .upload-button:hover {
-    background: #ff3f26;
   }
   
   .image-container {

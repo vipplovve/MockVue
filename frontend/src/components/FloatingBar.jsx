@@ -8,10 +8,11 @@ const FloatingBar = () => {
   const nav = useNavigate();
   const loc = useLocation();
   const {setCurrUser} = useContext(UserContext);
-  const hide = ["/auth"];
+  const hide = ["auth","interview"];
+  
   return (
     <>
-    {!hide.includes(loc.pathname) &&
+    {!hide.includes(loc.pathname.split('/')[1]) && 
     <div
     className={`fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center justify-around bg-blue-900 text-white rounded-lg shadow-lg transition-all duration-500 ${hovered ? 'w-72' : 'w-64'} h-10`}
     onMouseEnter={() => setHovered(true)}

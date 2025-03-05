@@ -70,7 +70,12 @@ const ResumeUploader = () => {
     <>
     <Overlay 
       isOpen={showOverlay} 
-      onClose={() => setShowOverlay(false)} 
+      onClose={() => {
+        setShowOverlay(false);
+        setLoading(false);
+        setShowRoles(false);
+      }
+      } 
       loading={loading} 
       setLoading={setLoading} 
       loadingMSG={loadingMSG} 
@@ -81,10 +86,10 @@ const ResumeUploader = () => {
       setInRole={setInRole}
     />
   
-    <div className="flex h-[calc(100vh-4rem)] w-full">
+    <div className="flex h-[calc(100vh-4rem)] w-full  bg-gray-800 bg-gradient-to-b from-gray-900 via-black to-black">
       {/* Left Half (New Component) */}
-      <div className="w-1/2 flex items-center justify-center bg-gray-100">
-        dfujbvkdfjvb
+      <div className="w-1/2 flex items-center justify-center p-10">
+        <div className="text-2xl text-blue-800 font-extrabold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl leading-snug">Upload Resume,<br/><span className="text-gray-200"> To Start Your Mock </span><br/> Interview Journey!</div>
       </div>
   
       {/* Right Half (UploadFile Component) */}
