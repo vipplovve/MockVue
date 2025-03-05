@@ -1,19 +1,13 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Overlay } from '../components/Overlay';
+import { useNavigate } from 'react-router-dom';
 
 export const Home = () => {
-  const [showOverlay, setShowOverlay] = useState(false);
-
+  const nav = useNavigate();
+  useEffect(() => {
+    nav("/auth");
+  }, [])
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <button
-        className="bg-blue-600 text-white px-4 py-2 rounded"
-        onClick={() => setShowOverlay(true)}
-      >
-        Show Overlay
-      </button>
-
-      <Overlay isOpen={showOverlay} onClose={() => setShowOverlay(false)} />
-    </div>
+    <>Home</>
   )
 }

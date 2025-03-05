@@ -92,7 +92,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("next-ques", ({ voiceId }) => {
-    socket.emit("interview-ended", { message: "Interview completed!" });
+    // socket.emit("interview-ended", { message: "Interview completed!" });
     speakQuestion(socket, voiceId, ques[currentQuestionIndex].question);
   });
 

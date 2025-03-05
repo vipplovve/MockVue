@@ -68,11 +68,39 @@ const ResumeUploader = () => {
 
   return (
     <>
-    <Overlay isOpen={showOverlay} onClose={() => setShowOverlay(false)} loading={loading} setLoading={setLoading} loadingMSG={loadingMSG} showRoles={showRoles} setShowRoles={setShowRoles} roles={roles} handleInterview={handleInterview} setInRole={setInRole}/>
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md text-center mt-50">
-      <UploadFile file={file} setFile={setFile} fileName={fileName} setFileName={setFileName} handleUpload={handleUpload} handleFileChange={handleFileChange} />
+    <Overlay 
+      isOpen={showOverlay} 
+      onClose={() => setShowOverlay(false)} 
+      loading={loading} 
+      setLoading={setLoading} 
+      loadingMSG={loadingMSG} 
+      showRoles={showRoles} 
+      setShowRoles={setShowRoles} 
+      roles={roles} 
+      handleInterview={handleInterview} 
+      setInRole={setInRole}
+    />
+  
+    <div className="flex h-[calc(100vh-4rem)] w-full">
+      {/* Left Half (New Component) */}
+      <div className="w-1/2 flex items-center justify-center bg-gray-100">
+        dfujbvkdfjvb
+      </div>
+  
+      {/* Right Half (UploadFile Component) */}
+      <div className="w-1/2 flex items-center justify-center">
+        <UploadFile 
+          file={file} 
+          setFile={setFile} 
+          fileName={fileName} 
+          setFileName={setFileName} 
+          handleUpload={handleUpload} 
+          handleFileChange={handleFileChange} 
+        />
+      </div>
     </div>
-    </>
+  </>
+  
   );
 };
 

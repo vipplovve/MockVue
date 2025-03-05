@@ -4,8 +4,8 @@ const { categorizeResume, generateInterview, evaluateAnswers } = require("../con
 
 const router = express.Router();
 
-router.get("/categorize",categorizeResume);
-router.post("/genInterview",generateInterview);
-router.get("/evaluate", evaluateAnswers);
+router.get("/categorize",isAuth,categorizeResume);
+router.post("/genInterview",isAuth,generateInterview);
+router.post("/evaluate", isAuth,evaluateAnswers);
 
 module.exports = router;

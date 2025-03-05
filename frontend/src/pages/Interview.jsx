@@ -96,8 +96,11 @@ const Interview = () => {
         newSocket.emit('end-interview', { interviewId })
         setIsOpen(true)
         setLoading(true)
-        const { data } = await axiosInstance.post('/evaluate', { interviewId })
+        console.log(1)
+        const { data } = await axiosInstance.post('/genAi/evaluate', { interviewId })
+        console.log(data)
         setScores(data)
+        setLoading(false)
       })
 
       newSocket.on('tts-chunk', async ({ audio }) => {

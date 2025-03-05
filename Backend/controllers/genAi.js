@@ -171,6 +171,7 @@ exports.generateInterview = async (req, res) => {
         "Explain the concept of closures in JavaScript.",
         "What are ACID properties in databases?"
       ]
+      Keep in mind that these quetionsare for a oral interview and will be directly converted to speech, so they should be short and to the point.
       Do **not** include any Markdown formatting like \`\`\`json.
       Respond **only** with the JSON array.
     `;
@@ -212,66 +213,79 @@ exports.generateInterview = async (req, res) => {
   }
 };
 
-exports.evaluateAnswers = async (req, res) => {
-  try {
-    const { interviewId } = req.body;
-
-    const interview = await Interview.findById(interviewId);
-    if (
-      !interview ||
-      !interview.questions ||
-      interview.questions.length === 0
-    ) {
-      return res
-        .status(404)
-        .json({ error: "Interview not found or no questions available" });
-    }
-
-    const { questions } = interview;
-    let totalTechnicalScore = 0;
-    let totalCommunicationScore = 0;
-    let validResponses = 0;
-
-    await Promise.all(
-      questions.map(async ({ question, answer }) => {
-        const prompt = `Evaluate the following answer to the given question. Give scores out of 10 for technical accuracy and communication clarity.
-          \nQuestion: ${question}
-          \nAnswer: ${answer}
-          \nProvide output in JSON format as { "technical_score": number, "communication_score": number }.`;
-
-        try {
-          const response = await axios.post(GEMINI_URL, {
-            contents: [{ parts: [{ text: prompt }] }],
-          });
-
-          const data = response.data;
-
-          if (
-            data &&
-            data.technical_score !== undefined &&
-            data.communication_score !== undefined
-          ) {
-            totalTechnicalScore += data.technical_score;
-            totalCommunicationScore += data.communication_score;
-            validResponses++;
-          }
-        } catch (apiError) {
-          console.error("Error calling Gemini API:", apiError);
+    exports.evaluateAnswers = async (req, res) => {
+      try {
+        const { interviewId } = req.body;
+    
+        const interview = await Interview.findById(interviewId);
+        if (!interview || !interview.questions || interview.questions.length === 0) {
+          return res.status(404).json({ error: "Interview not found or no questions available" });
         }
-      })
-    );
-
-    const avgTechnicalScore =
-      validResponses > 0 ? totalTechnicalScore / validResponses : 0;
-    const avgCommunicationScore =
-      validResponses > 0 ? totalCommunicationScore / validResponses : 0;
-
-    res.json({
-      avg_technical_score: avgTechnicalScore.toFixed(2),
-      avg_communication_score: avgCommunicationScore.toFixed(2),
-    });
-  } catch (error) {
-    console.error("Internal Server Error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
+    
+        const { questions } = interview;
+        let totalTechnicalScore = 0;
+        let totalCommunicationScore = 0;
+        let validResponses = 0;
+    
+        console.log("Evaluation started...");
+    
+        await Promise.all(
+          questions.map(async ({ question, answer }) => {
+            const prompt = `Evaluate the following answer to the given question. Give scores out of 10 for technical accuracy and communication clarity.
+              \nQuestion: ${question}
+              \nAnswer: ${answer}
+              \nProvide output in JSON format as { "technical_score": number, "communication_score": number }.
+              Do **not** include any Markdown formatting like \`\`\`json.
+              Respond **only** with the JSON Object.
+              `;
+    
+            try {
+              const response = await axios.post(GEMINI_URL, {
+                contents: [{ parts: [{ text: prompt }] }],
+              });
+    
+              let jsonText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+              jsonText = jsonText.replace(/```json|```/g, "").trim();
+              if (jsonText) {
+                try {
+                  const parsedData = JSON.parse(jsonText); // Convert text to JSON
+                  
+                  if (
+                    parsedData.technical_score !== undefined &&
+                    parsedData.communication_score !== undefined
+                  ) {
+                    totalTechnicalScore += parsedData.technical_score;
+                    totalCommunicationScore += parsedData.communication_score;
+                    validResponses++;
+                  }
+                } catch (parseError) {
+                  console.error("JSON Parsing Error:", parseError);
+                }
+              }
+            } catch (apiError) {
+              console.error("Error calling Gemini API:", apiError);
+            }
+          })
+        );
+    
+        console.log("Evaluation completed.");
+    
+        const avgTechnicalScore = validResponses > 0 ? totalTechnicalScore / validResponses : 0;
+        const avgCommunicationScore = validResponses > 0 ? totalCommunicationScore / validResponses : 0;
+    
+        console.log({
+          tech: avgTechnicalScore.toFixed(2),
+          comm: avgCommunicationScore.toFixed(2),
+        });
+    
+        res.json({
+          tech: avgTechnicalScore.toFixed(2),
+          comm: avgCommunicationScore.toFixed(2),
+        });
+    
+      } catch (error) {
+        console.error("Internal Server Error:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+      }
+    };
+    

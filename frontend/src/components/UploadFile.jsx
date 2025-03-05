@@ -2,7 +2,7 @@ import React from "react";
 
 const UploadFile = ({file,setFile,fileName,setFileName,handleUpload,handleFileChange}) => {
   return (
-    <div className="containerf">
+    <div className="containerf w-96">
       <div className="folder">
         <div className="front-side">
           <div className="tip"></div>

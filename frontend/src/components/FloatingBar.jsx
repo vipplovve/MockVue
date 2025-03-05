@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import axiosInstance from "../utils/axiosInstance";
+import UserContext from "../context/user/UserContext";
 
 const FloatingBar = () => {
   const [hovered, setHovered] = useState(false);
   const nav = useNavigate();
   const loc = useLocation();
+  const {setCurrUser} = useContext(UserContext);
   const hide = ["/auth"];
   return (
     <>
@@ -17,7 +20,13 @@ const FloatingBar = () => {
       {icons.map((icon, index) => (
         <button
           key={index}
-          onClick={()=>{nav(routes[index])}}
+          onClick={async ()=>{
+            if(index === 3){
+              await axiosInstance.get("/auth/logout");
+              setCurrUser(null);
+            }
+            nav(routes[index])
+          }}
           className="w-10 h-10 flex items-center justify-center rounded-full bg-transparent transition-transform duration-300 hover:-translate-y-1"
         >
           {icon}
@@ -28,7 +37,7 @@ const FloatingBar = () => {
   );
 };
 
-const routes = ["/", "/upload", "/profile", "/logout"];
+const routes = ["/", "/upload", "/profile", "/auth"];
 
 const icons = [
     <svg
