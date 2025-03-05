@@ -5,6 +5,7 @@ import re
 import pandas as pd
 import tensorflow as tf
 import nltk
+import concurrent.futures
 
 nltk.download('punkt')
 nltk.download('stopwords')
@@ -47,6 +48,10 @@ def sentence_to_glove(sentence, embeddings_dict, dimensions=300):
         return np.mean(matrix, axis=0)
     return np.zeros((dimensions,))
 
+# Predict with model
+def predict_with_model(model, embeddings):
+    return model.predict(embeddings)
+
 # Read input from Node.js
 def main():
     try:
@@ -59,9 +64,18 @@ def main():
         text = preprocess_text(input_data["career_objective"] + " " + input_data["skills"])
         embeddings = sentence_to_glove(text, word_embeddings).reshape(1, 300)
 
-        lstm_pred = model_lstm.predict(embeddings.reshape(1, 1, 300))
-        dense_pred = model_dense.predict(embeddings.reshape(1, 300))
-        lstm_att_pred = model_lstm_att.predict(embeddings.reshape(1, 1, 300))
+        # lstm_pred = model_lstm.predict(embeddings.reshape(1, 1, 300))
+        # dense_pred = model_dense.predict(embeddings.reshape(1, 300))
+        # lstm_att_pred = model_lstm_att.predict(embeddings.reshape(1, 1, 300))
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future_lstm = executor.submit(predict_with_model, model_lstm, embeddings.reshape(1, 1, 300))
+            future_dense = executor.submit(predict_with_model, model_dense, embeddings.reshape(1, 300))
+            future_lstm_att = executor.submit(predict_with_model, model_lstm_att, embeddings.reshape(1, 1, 300))
+
+            lstm_pred = future_lstm.result()
+            dense_pred = future_dense.result()
+            lstm_att_pred = future_lstm_att.result()
 
         # Compute average across all models
         avg_prediction = (lstm_pred + dense_pred + lstm_att_pred) / 3

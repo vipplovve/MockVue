@@ -4,7 +4,7 @@ import GLogin from "../components/GLogin";
 
 const Auth = () => {
   return (
-    <div className="flex-grow flex flex-col items-center justify-center bg-gray-800 bg-gradient-to-b from-gray-900 via-black to-black text-white h-screen w-full">
+    <div className="flex-grow flex flex-col items-center justify-center bg-gray-800 bg-gradient-to-b from-gray-900 via-black to-black text-white h-[calc(100vh-4rem)] w-full">
       <div className="flex flex-col justify-center items-center text-center gap-4">
         <motion.img
           src="/logo.png"

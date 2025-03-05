@@ -5,8 +5,6 @@ const os = require("os");
 
 exports.categorizeResume = async (req, res) => {
     const userName = req.user.userName;
-    return res.json({ roles: ["SDE","Daat"] });
-    // const userName = "Sunpreet";
     const user = await User.findOne({
         userName
     });

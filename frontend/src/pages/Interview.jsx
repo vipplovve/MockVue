@@ -210,7 +210,7 @@ const Interview = () => {
       {!showNewAvatar && (
         <>
           <h1 className="mt-10 text-3xl text-gray-200 font-extrabold tracking-tight text-center">Select AI Interviewer</h1>
-          <select className='text-gray-200  ' value={voiceId} onChange={(e) => setVoiceId(e.target.value)}>
+          <select className='mt-4 px-4 py-2 text-gray-200 bg-gray-700 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-600 transition duration-300' value={voiceId} onChange={(e) => setVoiceId(e.target.value)}>
             <option value="Joanna">US Female (Joanna)</option>
             <option value="Matthew">US Male (Matthew)</option>
             <option value="Amy">British Female (Amy)</option>
