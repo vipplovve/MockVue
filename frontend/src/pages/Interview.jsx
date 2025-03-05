@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useRef, useContext } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import io from 'socket.io-client'
 import UserContext from '../context/user/UserContext'
 import { toast } from 'react-toastify'
 import { ResultOverlay } from '../components/ResultOverlay'
+import axiosInstance from '../utils/axiosInstance'
+
 const Interview = () => {
   const { InRole } = useContext(UserContext)
   const [voiceId, setVoiceId] = useState('Joanna')
@@ -19,7 +21,7 @@ const Interview = () => {
   const silenceTimerRef = useRef(null)
   const audioContextRef = useRef(null)
   const socketRef = useRef(null)
-
+  const navigate = useNavigate()
   const { interviewId } = useParams()
 
   const startRecording = () => {
@@ -90,15 +92,14 @@ const Interview = () => {
         newSocket.emit('next-ques', { voiceId })
       })
       newSocket.on('interview-ended', async () => {
-         toast.success('Interview Completed !')
-        //  newSocket.emit('end-interview', { interviewId })
+        toast.success('Interview Completed !')
+        newSocket.emit('end-interview', { interviewId })
         setIsOpen(true)
         setLoading(true)
-        setTimeout(() => {
-          setLoading(false)
-        }, 2000)
-        setScores({"tech": 8, "comm": 7})
+        const { data } = await axiosInstance.post('/evaluate', { interviewId })
+        setScores(data)
       })
+
       newSocket.on('tts-chunk', async ({ audio }) => {
         if (!audioContextRef.current) {
           return
@@ -185,7 +186,7 @@ const Interview = () => {
                   d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
                 />
               </svg>
-              <p className='font-semibold'>Listen Carefully</p>
+              <p className="font-semibold">Listen Carefully</p>
             </div>
           )}
         </div>
@@ -231,7 +232,17 @@ const Interview = () => {
       {countdown !== null && countdown !== 0 && (
         <p className="mt-32 text-3xl font-bold"> Starting in {countdown}</p>
       )}
-      <ResultOverlay isOpen={isOpen} onClose={() => setIsOpen(false)} loading={loading} setLoading={setLoading} loadingMSG={"Analysing answers"} scores = {scores} />
+      <ResultOverlay
+        isOpen={isOpen}
+        onClose={() => {
+          setIsOpen(false)
+          navigate('/upload')
+        }}
+        loading={loading}
+        setLoading={setLoading}
+        loadingMSG={'Analysing answers'}
+        scores={scores}
+      />
     </div>
   )
 }

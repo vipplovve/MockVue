@@ -23,7 +23,7 @@ const ResumeUploader = () => {
     try {
       setLoading(true);
       setLoadingMSG("Setting up interview...");
-      const {data} = await axiosInstance.post("/genAi/genInterview", {role, difficulty, count:5});
+      const {data} = await axiosInstance.post("/genAi/genInterview", {role, difficulty, count:2});
       console.log(data);
       setLoading(false);
       setShowOverlay(false);

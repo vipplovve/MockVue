@@ -1,6 +1,7 @@
 const { spawn } = require("child_process");
 const User = require("../models/User");
 const { getSkillsandObjective } = require("./genAi");
+const os = require("os");
 
 exports.categorizeResume = async (req, res) => {
     const userName = req.user.userName;
@@ -17,7 +18,9 @@ exports.categorizeResume = async (req, res) => {
     //     skills: req.body.skills
     // };
 
-    const pythonProcess = spawn("python", ["../ML/scripts/run_models.py"]); // Suppress error logs
+    const command = os.platform() === "win32" ? "python" : "venv/bin/python3";
+
+    const pythonProcess = spawn(command, ["../ML/scripts/run_models.py"]); // Suppress error logs
 
     pythonProcess.stdin.write(JSON.stringify(inputData));
     pythonProcess.stdin.end();

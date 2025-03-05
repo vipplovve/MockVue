@@ -1,8 +1,5 @@
 const axios = require("axios");
 const User = require("../models/User");
-const { exec } = require("child_process");
-const path = require("path");
-const os = require("os");
 const Interview = require("../models/Interview");
 
 const API_KEY = process.env.GEMINI_API_KEY;
@@ -215,28 +212,66 @@ exports.generateInterview = async (req, res) => {
   }
 };
 
-exports.evaluateAnswer = async (req, res) => {
+exports.evaluateAnswers = async (req, res) => {
   try {
-    const { question, answer } = req.body;
-    if (!question || !answer)
+    const { interviewId } = req.body;
+
+    const interview = await Interview.findById(interviewId);
+    if (
+      !interview ||
+      !interview.questions ||
+      interview.questions.length === 0
+    ) {
       return res
-        .status(400)
-        .json({ error: "Question and answer are required" });
+        .status(404)
+        .json({ error: "Interview not found or no questions available" });
+    }
 
-    const prompt = `Evaluate the following answer to the given question. Give scores out of 10 for technical accuracy and communication clarity.
-        \nQuestion: ${question}
-        \nAnswer: ${answer}
-        \nProvide output in JSON format as { "technical_score": number, "communication_score": number }.`;
+    const { questions } = interview;
+    let totalTechnicalScore = 0;
+    let totalCommunicationScore = 0;
+    let validResponses = 0;
 
-    const response = await axios.post(GEMINI_URL, {
-      contents: [{ parts: [{ text: prompt }] }],
-    });
+    await Promise.all(
+      questions.map(async ({ question, answer }) => {
+        const prompt = `Evaluate the following answer to the given question. Give scores out of 10 for technical accuracy and communication clarity.
+          \nQuestion: ${question}
+          \nAnswer: ${answer}
+          \nProvide output in JSON format as { "technical_score": number, "communication_score": number }.`;
 
-    const scores = JSON.parse(
-      response.data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}"
+        try {
+          const response = await axios.post(GEMINI_URL, {
+            contents: [{ parts: [{ text: prompt }] }],
+          });
+
+          const data = response.data;
+
+          if (
+            data &&
+            data.technical_score !== undefined &&
+            data.communication_score !== undefined
+          ) {
+            totalTechnicalScore += data.technical_score;
+            totalCommunicationScore += data.communication_score;
+            validResponses++;
+          }
+        } catch (apiError) {
+          console.error("Error calling Gemini API:", apiError);
+        }
+      })
     );
-    res.json({ scores });
+
+    const avgTechnicalScore =
+      validResponses > 0 ? totalTechnicalScore / validResponses : 0;
+    const avgCommunicationScore =
+      validResponses > 0 ? totalCommunicationScore / validResponses : 0;
+
+    res.json({
+      avg_technical_score: avgTechnicalScore.toFixed(2),
+      avg_communication_score: avgCommunicationScore.toFixed(2),
+    });
   } catch (error) {
+    console.error("Internal Server Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

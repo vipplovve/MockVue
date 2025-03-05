@@ -7,7 +7,7 @@ require("dotenv").config();
 const {
   PollyClient,
   SynthesizeSpeechCommand,
-} = require("@aws-sdk/client-polly");
+} = require("@aws-sdk/client-polly");         
 const cors = require("cors");
 const connectToMongo = require("./config/db");
 const Interview = require("./models/Interview");
@@ -93,7 +93,7 @@ io.on("connection", (socket) => {
 
   socket.on("next-ques", ({ voiceId }) => {
     socket.emit("interview-ended", { message: "Interview completed!" });
-    // speakQuestion(socket, voiceId, ques[currentQuestionIndex].question);
+    speakQuestion(socket, voiceId, ques[currentQuestionIndex].question);
   });
 
   socket.on("answer", ({ answer }) => {
