@@ -24,6 +24,12 @@ const Interview = () => {
   const navigate = useNavigate()
   const { interviewId } = useParams()
 
+  const voiceIdRef = useRef(voiceId)
+
+  useEffect(() => {
+    voiceIdRef.current = voiceId
+  },[voiceId])
+
   const startRecording = () => {
     if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
       return
@@ -83,13 +89,13 @@ const Interview = () => {
     }
 
     if (!socketRef.current) {
-      const newSocket = io(import.meta.env.VITE_SOCKET_URL, { query: { voiceId } })
+      const newSocket = io(import.meta.env.VITE_SOCKET_URL)
       socketRef.current = newSocket
       newSocket.on('interview-started', () => {
-        newSocket.emit('next-ques', { voiceId })
+        newSocket.emit('next-ques', { voiceId : voiceIdRef.current })
       })
       newSocket.on('answer-received', () => {
-        newSocket.emit('next-ques', { voiceId })
+        newSocket.emit('next-ques', { voiceId : voiceIdRef.current })
       })
       newSocket.on('interview-ended', async () => {
         toast.success('Interview Completed !')
