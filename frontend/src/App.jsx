@@ -10,6 +10,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Interview from "./pages/Interview";
 import Navbar2 from "./components/Navbar";
 import FloatingBar from "./components/FloatingBar";
+import ResumeReview from "./pages/ResumeReview";
 
 const App = () => {
   return (
@@ -18,6 +19,7 @@ const App = () => {
       <div className="mt-16 ">
       <Routes>
         <Route exact path="/" element={<Home/>} />
+        <Route exact path="/review" element={<ResumeReview/>} />
         <Route exact path="/upload" element={<ProtectedRoute element ={<ResumeUploader />}/>} />
         <Route exact path="/auth" element={<Auth/>} />
         <Route exact path="/interview/:interviewId" element={<ProtectedRoute element ={<Interview/>} />}/>

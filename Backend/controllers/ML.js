@@ -19,6 +19,13 @@ exports.categorizeResume = async (req, res) => {
 
     const command = os.platform() === "win32" ? "python" : "venv/bin/python3";
 
+    return res.status(200).json({
+        roles: [
+            "Software Engineer",
+            "Data Scientist",
+        ]
+    })
+
     const pythonProcess = spawn(command, ["../ML/scripts/run_models.py"]); // Suppress error logs
 
     pythonProcess.stdin.write(JSON.stringify(inputData));

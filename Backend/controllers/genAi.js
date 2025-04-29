@@ -5,6 +5,90 @@ const Interview = require("../models/Interview");
 const API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
+
+
+exports.getResumeScore = async (resumeText, aspiringRole) => {
+  try {
+    const prompt = `
+      You are a professional resume reviewer and hiring expert. Review the following resume for the role of "${aspiringRole}" and score it out of 100. Return a detailed JSON response structured as follows:
+
+      1. Score breakdown by category with:
+         - "score" (numeric)
+         - "summary" (short evaluation)
+         - "comments" (array of specific suggestions)
+      2. A "total_score" (out of 100)
+      3. An "overall_comment" summarizing resume quality
+
+      Scoring Criteria (Total 100 Points):
+      - Education (10)
+      - Work Experience (25)
+      - Projects (15)
+      - Skills (15)
+      - Measurable Metrics (10)
+      - Formatting & Structure (10)
+      - Keywords & ATS Optimization (10)
+      - Contact Information Completeness (5)
+
+      Respond ONLY with a valid JSON object in the following format:
+
+      {
+        "total_score": 87,
+        "breakdown": {
+          "education": {
+            "score": 9,
+            "summary": "Strong academic background.",
+            "comments": ["Add GPA if above 3.5.", "Include relevant coursework."]
+          },
+          "work_experience": {
+            "score": 22,
+            "summary": "Good relevant experience.",
+            "comments": ["Add measurable outcomes.", "Include action verbs."]
+          },
+          ...
+        },
+        "overall_comment": "Strong resume overall. Improve metric-based outcomes and keyword alignment for a better score."
+      }
+
+      Resume:
+      ${resumeText}
+    `;
+
+    const response = await axios.post(GEMINI_URL, {
+      contents: [{ parts: [{ text: prompt }] }],
+    });
+
+    let responseText =
+      response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    responseText = responseText.replace(/```json|```/g, "").trim();
+
+    let resumeScore = {};
+    try {
+      resumeScore = JSON.parse(responseText);
+    } catch (err) {
+      console.error(
+        "Error parsing Gemini resume score response:",
+        responseText,
+        err
+      );
+      return {
+        total_score: 0,
+        breakdown: {},
+        overall_comment: "Invalid response format from Gemini.",
+      };
+    }
+
+    return resumeScore;
+  } catch (error) {
+    console.error("Gemini API error:", error);
+    return {
+      total_score: 0,
+      breakdown: {},
+      overall_comment: "Gemini API error occurred.",
+    };
+  }
+};
+
+
 exports.getSkillsandObjective = async (resumeText) => {
   try {
     const prompt = `
