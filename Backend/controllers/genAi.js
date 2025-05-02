@@ -5,12 +5,23 @@ const Interview = require("../models/Interview");
 const API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
-
-
-exports.getResumeScore = async (resumeText, aspiringRole) => {
+exports.genResumeAnalysis = async (req, res) => {
+  const userName = req.user.userName;
+  const user = await User.findOne({
+    userName,
+  });
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+  if (!user.parsedResume) {
+    return res.status(404).json({ error: "Resume not found" });
+  }
+  const resumeText = user.parsedResume;
+  const role = req.body.role || "Software Engineer";
+  const level = req.body.level || "fresher";
   try {
     const prompt = `
-      You are a professional resume reviewer and hiring expert. Review the following resume for the role of "${aspiringRole}" and score it out of 100. Return a detailed JSON response structured as follows:
+      You are a professional resume reviewer and hiring expert. Review the following resume for the role of "${role}" as a "${level}" and score it out of 100. Return a detailed JSON response structured as follows:
 
       1. Score breakdown by category with:
          - "score" (numeric)
@@ -32,23 +43,84 @@ exports.getResumeScore = async (resumeText, aspiringRole) => {
       Respond ONLY with a valid JSON object in the following format:
 
       {
-        "total_score": 87,
+        "total_score": 88,
         "breakdown": {
           "education": {
             "score": 9,
-            "summary": "Strong academic background.",
-            "comments": ["Add GPA if above 3.5.", "Include relevant coursework."]
+            "summary": "Excellent academic record with a high CGPA.",
+            "comments": [
+              "Consider adding relevant coursework within your field of interest, if applicable.",
+              "Mention any significant academic projects or research undertaken during your degree.",
+              "No suggestions."
+            ]
           },
           "work_experience": {
-            "score": 22,
-            "summary": "Good relevant experience.",
-            "comments": ["Add measurable outcomes.", "Include action verbs."]
+            "score": 23,
+            "summary": "Strong internship experience with quantifiable achievements.",
+            "comments": [
+              "Focus on using strong action verbs to describe your contributions (e.g., 'Implemented', 'Developed').",
+              "Quantify your contributions whenever possible. You've done a good job already, try to add more.",
+              "Use the STAR method (Situation, Task, Action, Result) to elaborate on your responsibilities and accomplishments in the internship."
+            ]
           },
-          ...
+          "projects": {
+            "score": 14,
+            "summary": "Well-described projects demonstrating practical skills.",
+            "comments": [
+              "Ensure the project descriptions clearly highlight your role and contributions to each project.",
+              "Include more details about the challenges you faced and how you overcame them.",
+              "Quantify the impact of your project work, where possible."
+            ]
+          },
+          "skills": {
+            "score": 14,
+            "summary": "Comprehensive skill set relevant to software engineering.",
+            "comments": [
+              "Categorize skills by proficiency level (e.g., proficient, familiar) to provide a clearer picture of your expertise.",
+              "List skills in order of relevance to the targeted software engineer roles.",
+              "No suggestions."
+            ]
+          },
+          "measurable_metrics": {
+            "score": 9,
+            "summary": "Good use of metrics to showcase impact.",
+            "comments": [
+              "Continue to quantify the impact of your work wherever possible.",
+              "Ensure that the metrics are clearly linked to your actions and results.",
+              "Expand on the context behind the metrics to highlight the significance of the results."
+            ]
+          },
+          "formatting_structure": {
+            "score": 10,
+            "summary": "Well-organized and easy-to-read format.",
+            "comments": [
+              "Maintain consistent formatting throughout the resume.",
+              "Use white space effectively to improve readability.",
+              "No suggestions."
+            ]
+          },
+          "keywords_ats_optimization": {
+            "score": 5,
+            "summary": "ATS optimization needs improvement.",
+            "comments": [
+              "Tailor your resume to the specific keywords listed in the job descriptions you are applying for.",
+              "Use common industry terms and abbreviations to increase ATS compatibility.",
+              "Ensure that keywords are naturally integrated into the content of your resume."
+            ]
+          },
+          "contact_information": {
+            "score": 4,
+            "summary": "Sufficient contact information.",
+            "comments": [
+              "Ensure all links are active and point to the correct page.",
+              "Consider adding city/state to the address.",
+              "No suggestions."
+            ]
+          }
         },
-        "overall_comment": "Strong resume overall. Improve metric-based outcomes and keyword alignment for a better score."
+        "overall_comment": "Excellent resume for a fresher. Strong academic background, relevant experience, and impactful projects. Focus on optimizing for ATS and integrating relevant keywords to maximize visibility to recruiters."
       }
-
+        
       Resume:
       ${resumeText}
     `;
@@ -70,24 +142,19 @@ exports.getResumeScore = async (resumeText, aspiringRole) => {
         responseText,
         err
       );
-      return {
-        total_score: 0,
-        breakdown: {},
-        overall_comment: "Invalid response format from Gemini.",
-      };
+      return res.status(500).json({
+        error: "Failed to parse resume score response",
+      });
     }
 
-    return resumeScore;
+    return res.status(200).json(resumeScore);
   } catch (error) {
     console.error("Gemini API error:", error);
-    return {
-      total_score: 0,
-      breakdown: {},
-      overall_comment: "Gemini API error occurred.",
-    };
+    return res.status(500).json({
+      error: "Internal Server Error",
+    });
   }
 };
-
 
 exports.getSkillsandObjective = async (resumeText) => {
   try {
@@ -106,7 +173,8 @@ exports.getSkillsandObjective = async (resumeText) => {
       contents: [{ parts: [{ text: prompt }] }],
     });
 
-    let responseText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    let responseText =
+      response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
     responseText = responseText.replace(/```json|```/g, "").trim();
 
     let skillsAndObjective = {};
@@ -118,8 +186,7 @@ exports.getSkillsandObjective = async (resumeText) => {
     }
 
     return skillsAndObjective;
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Gemini API error:", error);
     return { career_objective: "", skills: "" };
   }
@@ -165,7 +232,6 @@ const getRolesFromGemini = async (resumeText) => {
       return ["Uncategorized"];
     }
 
-    // ✅ Ensure valid roles
     roles = roles.filter((role) => allowedRoles.includes(role));
 
     return roles.length > 0 ? roles : ["Uncategorized"];
@@ -174,8 +240,6 @@ const getRolesFromGemini = async (resumeText) => {
     return ["Uncategorized"];
   }
 };
-
-
 
 exports.categorizeResume = async (req, res) => {
   try {
@@ -275,6 +339,7 @@ exports.generateInterview = async (req, res) => {
     let questions = [];
     try {
       questions = JSON.parse(responseText);
+      questions = questions.slice(0, count);
     } catch (parseError) {
       console.error("JSON Parse Error:", parseError);
       return res.status(500).json({ error: "Invalid response format from AI" });
@@ -290,86 +355,93 @@ exports.generateInterview = async (req, res) => {
       })),
     });
     const interviewId = interview._id;
-    res.json({interviewId,message: "Questions generated successfully" });
+    res.json({ interviewId, message: "Questions generated successfully" });
   } catch (error) {
     console.error("API Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-    exports.evaluateAnswers = async (req, res) => {
-      try {
-        const { interviewId } = req.body;
-    
-        const interview = await Interview.findById(interviewId);
-        if (!interview || !interview.questions || interview.questions.length === 0) {
-          return res.status(404).json({ error: "Interview not found or no questions available" });
-        }
-    
-        const { questions } = interview;
-        let totalTechnicalScore = 0;
-        let totalCommunicationScore = 0;
-        let validResponses = 0;
-    
-        console.log("Evaluation started...");
-    
-        await Promise.all(
-          questions.map(async ({ question, answer }) => {
-            const prompt = `Evaluate the following answer to the given question. Give scores out of 10 for technical accuracy and communication clarity.
+exports.evaluateAnswers = async (req, res) => {
+  try {
+    const { interviewId } = req.body;
+
+    const interview = await Interview.findById(interviewId);
+    if (
+      !interview ||
+      !interview.questions ||
+      interview.questions.length === 0
+    ) {
+      return res
+        .status(404)
+        .json({ error: "Interview not found or no questions available" });
+    }
+
+    const { questions } = interview;
+    let totalTechnicalScore = 0;
+    let totalCommunicationScore = 0;
+    let validResponses = 0;
+
+    console.log("Evaluation started...");
+
+    await Promise.all(
+      questions.map(async ({ question, answer }) => {
+        const prompt = `Evaluate the following answer to the given question. Give scores out of 10 for technical accuracy and communication clarity.
               \nQuestion: ${question}
               \nAnswer: ${answer}
               \nProvide output in JSON format as { "technical_score": number, "communication_score": number }.
               Do **not** include any Markdown formatting like \`\`\`json.
               Respond **only** with the JSON Object.
               `;
-    
+
+        try {
+          const response = await axios.post(GEMINI_URL, {
+            contents: [{ parts: [{ text: prompt }] }],
+          });
+
+          let jsonText =
+            response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          jsonText = jsonText.replace(/```json|```/g, "").trim();
+          if (jsonText) {
             try {
-              const response = await axios.post(GEMINI_URL, {
-                contents: [{ parts: [{ text: prompt }] }],
-              });
-    
-              let jsonText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-              jsonText = jsonText.replace(/```json|```/g, "").trim();
-              if (jsonText) {
-                try {
-                  const parsedData = JSON.parse(jsonText); // Convert text to JSON
-                  
-                  if (
-                    parsedData.technical_score !== undefined &&
-                    parsedData.communication_score !== undefined
-                  ) {
-                    totalTechnicalScore += parsedData.technical_score;
-                    totalCommunicationScore += parsedData.communication_score;
-                    validResponses++;
-                  }
-                } catch (parseError) {
-                  console.error("JSON Parsing Error:", parseError);
-                }
+              const parsedData = JSON.parse(jsonText); // Convert text to JSON
+
+              if (
+                parsedData.technical_score !== undefined &&
+                parsedData.communication_score !== undefined
+              ) {
+                totalTechnicalScore += parsedData.technical_score;
+                totalCommunicationScore += parsedData.communication_score;
+                validResponses++;
               }
-            } catch (apiError) {
-              console.error("Error calling Gemini API:", apiError);
+            } catch (parseError) {
+              console.error("JSON Parsing Error:", parseError);
             }
-          })
-        );
-    
-        console.log("Evaluation completed.");
-    
-        const avgTechnicalScore = validResponses > 0 ? totalTechnicalScore / validResponses : 0;
-        const avgCommunicationScore = validResponses > 0 ? totalCommunicationScore / validResponses : 0;
-    
-        console.log({
-          tech: avgTechnicalScore.toFixed(2),
-          comm: avgCommunicationScore.toFixed(2),
-        });
-    
-        res.json({
-          tech: avgTechnicalScore.toFixed(2),
-          comm: avgCommunicationScore.toFixed(2),
-        });
-    
-      } catch (error) {
-        console.error("Internal Server Error:", error);
-        res.status(500).json({ error: "Internal Server Error" });
-      }
-    };
-    
+          }
+        } catch (apiError) {
+          console.error("Error calling Gemini API:", apiError);
+        }
+      })
+    );
+
+    console.log("Evaluation completed.");
+
+    const avgTechnicalScore =
+      validResponses > 0 ? totalTechnicalScore / validResponses : 0;
+    const avgCommunicationScore =
+      validResponses > 0 ? totalCommunicationScore / validResponses : 0;
+
+    console.log({
+      tech: avgTechnicalScore.toFixed(2),
+      comm: avgCommunicationScore.toFixed(2),
+    });
+
+    res.json({
+      tech: avgTechnicalScore.toFixed(2),
+      comm: avgCommunicationScore.toFixed(2),
+    });
+  } catch (error) {
+    console.error("Internal Server Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};

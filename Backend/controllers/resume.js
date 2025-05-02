@@ -34,7 +34,7 @@ const parseResume = async (req, res) => {
 
       await User.findOneAndUpdate(
         { userName: req.user.userName },
-        { resume: originalname, parsedResume: extractedText }
+        { resume: filename, parsedResume: extractedText }
       );
       res.send({ text: "uploaded Sucessfully" });
     }
