@@ -303,23 +303,44 @@ exports.generateInterview = async (req, res) => {
 
     const skillsArray = extractedSkills.split(",").map((skill) => skill.trim());
 
-    const generalQuestionsCount = Math.ceil(count / 2);
-    const skillBasedQuestionsCount = count - generalQuestionsCount;
-
+    const generalQuestionsCount = Math.ceil(count / 3);
+    const skillBasedQuestionsCount = Math.ceil(count / 3);
+    const codeBasedQuestionsCount = Math.ceil(count / 3);
     const prompt = `
-      Generate ${generalQuestionsCount} general technical interview questions for a ${role} at ${difficulty} level.
-      Then generate ${skillBasedQuestionsCount} technical questions based on these skills: ${skillsArray.join(
+      Generate ${generalQuestionsCount} general technical verbally answerable interview questions for a ${role} at ${difficulty} level.
+      Then generate ${skillBasedQuestionsCount} technical verbally answerable questions based on one of these skills: ${skillsArray.join(
       ", "
     )}.
-      Questions Should be short and to the point and verbally anwserable.
-      Format the response as a **valid JSON array** with only questions.
+      Then generate ${codeBasedQuestionsCount} coding questions that can be written with pseudocode in under 2 mins.
+      Format the response as a **valid JSON Array** with questions and their types (Oral/Code).
       Example:
       [
-        "What is the difference between HTTP and HTTPS?",
-        "Explain the concept of closures in JavaScript.",
-        "What are ACID properties in databases?"
+      {
+        "question": "What is the difference between HTTP and HTTPS?",
+        "type": "Oral"
+      },
+      {
+        "question": "Explain the difference between a stack and a queue.",
+        "type": "Oral"
+      },
+      {
+        "question": "Explain the concept of containerization using Docker.",
+        "type": "Oral"
+      },
+      {
+        "question": "What is the purpose of a load balancer?",
+        "type": "Oral"
+      },
+      {
+        "question": "Write a pseudocode for a function that reverses a string.",
+        "type": "Code"
+      },
+      {
+        "question": "Write a pseudocode for a function that checks if a number is prime.",
+        "type": "Code"
+      }
       ]
-      Keep in mind that these quetionsare for a oral interview and will be directly converted to speech, so they should be short and to the point.
+      Keep in mind that oral questions are for interview and will be directly converted to speech using tts, so they should be short and to the point.
       Do **not** include any Markdown formatting like \`\`\`json.
       Respond **only** with the JSON array.
     `;
@@ -349,10 +370,7 @@ exports.generateInterview = async (req, res) => {
       userName,
       role,
       difficulty,
-      questions: questions.map((q) => ({
-        question: q,
-        answer: "",
-      })),
+      questions: questions,
     });
     const interviewId = interview._id;
     res.json({ interviewId, message: "Questions generated successfully" });
@@ -385,14 +403,25 @@ exports.evaluateAnswers = async (req, res) => {
     console.log("Evaluation started...");
 
     await Promise.all(
-      questions.map(async ({ question, answer }) => {
-        const prompt = `Evaluate the following answer to the given question. Give scores out of 10 for technical accuracy and communication clarity.
-              \nQuestion: ${question}
-              \nAnswer: ${answer}
-              \nProvide output in JSON format as { "technical_score": number, "communication_score": number }.
-              Do **not** include any Markdown formatting like \`\`\`json.
-              Respond **only** with the JSON Object.
-              `;
+      questions.map(async ({ question, answer , type }) => {
+        
+
+          const prompt =
+            type == "Oral"
+              ? `Evaluate the following answer to the given question. Give scores out of 10 for technical accuracy and communication clarity.
+          \nQuestion: ${question}
+          \nAnswer: ${answer}
+          \nProvide output in JSON format as { "technical_score": number, "communication_score": number }.
+          Do **not** include any Markdown formatting like \`\`\`json.
+          Respond **only** with the JSON Object.
+          `
+              : `Evaluate the given pseudocode answer to the given question. Give scores out of 10 for technical accuracy and code clarity (as communication_score in json).
+           \nQuestion: ${question}
+          \nAnswer: ${answer}
+          \nProvide output in JSON format as { "technical_score": number, "communication_score": number }.
+          Do **not** include any Markdown formatting like \`\`\`json.
+          Respond **only** with the JSON Object.
+          `;
 
         try {
           const response = await axios.post(GEMINI_URL, {
@@ -404,7 +433,7 @@ exports.evaluateAnswers = async (req, res) => {
           jsonText = jsonText.replace(/```json|```/g, "").trim();
           if (jsonText) {
             try {
-              const parsedData = JSON.parse(jsonText); // Convert text to JSON
+              const parsedData = JSON.parse(jsonText); 
 
               if (
                 parsedData.technical_score !== undefined &&

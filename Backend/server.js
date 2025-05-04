@@ -1,13 +1,15 @@
 const express = require("express");
 const { Server } = require("socket.io");
 const http = require("http");
+const fs = require("fs");
+const path = require("path");
 const session = require("express-session");
 const passport = require("passport");
 require("dotenv").config();
 const {
   PollyClient,
   SynthesizeSpeechCommand,
-} = require("@aws-sdk/client-polly");         
+} = require("@aws-sdk/client-polly");
 const cors = require("cors");
 const connectToMongo = require("./config/db");
 const Interview = require("./models/Interview");
@@ -56,10 +58,10 @@ const pollyClient = new PollyClient({
   },
 });
 
-const speakQuestion = async (socket, voiceId, question) => {
+const speakQuestion = async (socket, voiceId, ques) => {
   const command = new SynthesizeSpeechCommand({
     OutputFormat: "mp3",
-    Text: question,
+    Text: ques.type === "Code" ? "A Question will be displayed on your screen , please read it carefully and write the pseudo code for it" : ques.question,
     VoiceId: voiceId || "Joanna",
   });
   try {
@@ -69,7 +71,11 @@ const speakQuestion = async (socket, voiceId, question) => {
       chunks.push(chunk);
     }
     const audioBuffer = Buffer.concat(chunks);
-    socket.emit("tts-chunk", { audio: audioBuffer.toString("base64") });
+    socket.emit("tts-chunk", {
+      audio: audioBuffer.toString("base64"),
+      type: ques.type,
+      question: ques.type === "Code" ? ques.question : null,
+    });
   } catch (error) {
     console.error("Polly Error:", error);
   }
@@ -92,18 +98,37 @@ io.on("connection", (socket) => {
   });
 
   socket.on("next-ques", ({ voiceId }) => {
-    // socket.emit("interview-ended", { message: "Interview completed!" });
-    speakQuestion(socket, voiceId, ques[currentQuestionIndex].question);
+    if (ques[currentQuestionIndex].type === "Code") {
+      socket.emit("code-question", {
+        question: ques[currentQuestionIndex].question,
+      });
+      speakQuestion(socket, voiceId, {
+        question:
+          ques[currentQuestionIndex].question,
+          type: "Code",
+      });
+    } else {
+      speakQuestion(socket, voiceId, {
+        question: ques[currentQuestionIndex].question,
+        type: "Oral",
+      });
+    }
   });
 
-  socket.on("answer", ({ answer }) => {
+  socket.on("answer", ({ answer, audio }) => {
     ques[currentQuestionIndex].answer = answer;
+    if (audio !== null) {
+      const base64Data = audio.replace(/^data:audio\/\w+;base64,/, "");
+      const audioBuffer = Buffer.from(base64Data, "base64");
+      const fileName = `audio_answer_${Date.now()}.webm`;
+      const filePath = path.join(__dirname, "uploads", fileName);
+      fs.writeFileSync(filePath, audioBuffer);
+      ques[currentQuestionIndex].audioFile = fileName;
+    }
     currentQuestionIndex++;
-    console.log(answer)
     if (currentQuestionIndex >= ques.length)
       socket.emit("interview-ended", { message: "Interview completed!" });
-    else 
-      socket.emit("answer-received", { message: "Answer received!" });
+    else socket.emit("answer-received", { message: "Answer received!" });
   });
 
   socket.on("end-interview", async ({ interviewId }) => {

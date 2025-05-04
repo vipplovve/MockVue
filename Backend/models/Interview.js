@@ -15,7 +15,9 @@ const interviewSchema = new Schema({
   questions: [
     {
       question: { type: String, required: true },
+      type: { type: String, enum: ["Code", "Oral"], required: true },
       answer: { type: String , default: "" },
+      audioFile: { type: String, default: "" },
     },
   ],
   createdAt: { type: Date, default: Date.now },

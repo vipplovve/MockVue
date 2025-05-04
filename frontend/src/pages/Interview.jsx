@@ -5,6 +5,7 @@ import UserContext from '../context/user/UserContext'
 import { toast } from 'react-toastify'
 import { ResultOverlay } from '../components/ResultOverlay'
 import axiosInstance from '../utils/axiosInstance'
+import CodingOverlay from '../components/CodingOverlay'
 
 const Interview = () => {
   const { InRole } = useContext(UserContext)
@@ -14,12 +15,20 @@ const Interview = () => {
   const [isNarrating, setIsNarrating] = useState(false)
   const [showNewAvatar, setShowNewAvatar] = useState(false)
   const [userCaption, setUserCaption] = useState('')
+  const [codeOverlay, setCodeOverlay] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [scores, setScores] = useState({})
+  const [question, setQuestion] = useState('')
+  const [pseudoCode, setPseudoCode] = useState('')
+  const [timeLeft, setTimeLeft] = useState(60)
+
   const recognitionRef = useRef(null)
   const silenceTimerRef = useRef(null)
   const audioContextRef = useRef(null)
+  const mediaRecorderRef = useRef(null)
+  const audioChunksRef = useRef([])
+
   const socketRef = useRef(null)
   const navigate = useNavigate()
   const { interviewId } = useParams()
@@ -28,12 +37,21 @@ const Interview = () => {
 
   useEffect(() => {
     voiceIdRef.current = voiceId
-  },[voiceId])
+  }, [voiceId])
 
-  const startRecording = () => {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      return
-    }
+  const handleCodeSubmit = async () => {
+    if (!socketRef.current) return
+    setCodeOverlay(false)
+    socketRef.current.emit('answer', {
+      answer: pseudoCode,
+      audio: null
+    })
+    setPseudoCode('')
+    setTimeLeft(60)
+  }
+
+  const startRecording = async () => {
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     const recognition = new SpeechRecognition()
@@ -41,6 +59,8 @@ const Interview = () => {
     recognition.continuous = true
     recognition.interimResults = true
     recognition.lang = 'en-US'
+
+    let finalTranscript = ''
 
     recognition.onstart = () => {
       setIsSpeaking(true)
@@ -52,18 +72,18 @@ const Interview = () => {
         transcript += event.results[i][0].transcript
       }
 
+      finalTranscript = transcript
+
       const words = transcript.trim().split(/\s+/)
       setUserCaption(words.slice(-10).join(' '))
 
-      if (silenceTimerRef.current) {
-        clearTimeout(silenceTimerRef.current)
-      }
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
 
       silenceTimerRef.current = setTimeout(() => {
-        if (socketRef.current) {
-          socketRef.current.emit('answer', { answer: transcript })
-        }
         recognition.stop()
+        if (mediaRecorderRef.current) {
+          mediaRecorderRef.current.stop()
+        }
         setUserCaption('')
         setIsSpeaking(false)
       }, 3000)
@@ -75,6 +95,38 @@ const Interview = () => {
 
     recognition.onend = () => {
       setIsSpeaking(false)
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder
+      audioChunksRef.current = []
+
+      mediaRecorder.ondataavailable = (e) => {
+        audioChunksRef.current.push(e.data)
+      }
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: 'audio/webm'
+        })
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          const base64Audio = reader.result
+          if (socketRef.current) {
+            socketRef.current.emit('answer', {
+              answer: finalTranscript,
+              audio: base64Audio
+            })
+          }
+        }
+        reader.readAsDataURL(audioBlob)
+      }
+
+      mediaRecorder.start()
+    } catch (err) {
+      console.error('Microphone access error:', err)
     }
 
     recognitionRef.current = recognition
@@ -92,10 +144,10 @@ const Interview = () => {
       const newSocket = io(import.meta.env.VITE_SOCKET_URL)
       socketRef.current = newSocket
       newSocket.on('interview-started', () => {
-        newSocket.emit('next-ques', { voiceId : voiceIdRef.current })
+        newSocket.emit('next-ques', { voiceId: voiceIdRef.current })
       })
       newSocket.on('answer-received', () => {
-        newSocket.emit('next-ques', { voiceId : voiceIdRef.current })
+        newSocket.emit('next-ques', { voiceId: voiceIdRef.current })
       })
       newSocket.on('interview-ended', async () => {
         toast.success('Interview Completed !')
@@ -103,13 +155,15 @@ const Interview = () => {
         setIsOpen(true)
         setLoading(true)
         console.log(1)
-        const { data } = await axiosInstance.post('/genAi/evaluate', { interviewId })
+        const { data } = await axiosInstance.post('/genAi/evaluate', {
+          interviewId
+        })
         console.log(data)
         setScores(data)
         setLoading(false)
       })
 
-      newSocket.on('tts-chunk', async ({ audio }) => {
+      newSocket.on('tts-chunk', async ({ audio, type, question }) => {
         if (!audioContextRef.current) {
           return
         }
@@ -124,7 +178,11 @@ const Interview = () => {
 
           source.onended = () => {
             setIsNarrating(false)
-            startRecording()
+            if (type !== 'Code') startRecording()
+            else {
+              setCodeOverlay(true)
+              setQuestion(question)
+            }
           }
         } catch (err) {
           console.error('Error decoding audio data:', err)
@@ -164,8 +222,16 @@ const Interview = () => {
   }
 
   return (
-    <div className={`flex flex-col items-center ${showNewAvatar ? ' pt-36' : 'pt-16'} h-[calc(100vh-4rem)] bg-gray-800 bg-gradient-to-b from-gray-900 via-black to-black`}>
-      {!showNewAvatar && <h1 className="text-4xl font-extrabold tracking-tight text-center text-gray-200 mb-8">Role: {InRole}</h1>}
+    <div
+      className={`flex flex-col items-center ${
+        showNewAvatar ? ' pt-36' : 'pt-16'
+      } h-[calc(100vh-4rem)] bg-gray-800 bg-gradient-to-b from-gray-900 via-black to-black`}
+    >
+      {!showNewAvatar && (
+        <h1 className="text-4xl font-extrabold tracking-tight text-center text-gray-200 mb-8">
+          Role: {InRole}
+        </h1>
+      )}
       <div className="relative flex items-center justify-center w-full h-64 text-gray-200">
         <div
           className={`flex flex-col justify-center items-center gap-2 transition-transform duration-500 ${
@@ -215,8 +281,14 @@ const Interview = () => {
       </div>
       {!showNewAvatar && (
         <>
-          <h1 className="mt-10 text-3xl text-gray-200 font-extrabold tracking-tight text-center">Select AI Interviewer</h1>
-          <select className='mt-4 px-4 py-2 text-gray-200 bg-gray-700 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-600 transition duration-300' value={voiceId} onChange={(e) => setVoiceId(e.target.value)}>
+          <h1 className="mt-10 text-3xl text-gray-200 font-extrabold tracking-tight text-center">
+            Select AI Interviewer
+          </h1>
+          <select
+            className="mt-4 px-4 py-2 text-gray-200 bg-gray-700 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-600 transition duration-300"
+            value={voiceId}
+            onChange={(e) => setVoiceId(e.target.value)}
+          >
             <option value="Joanna">US Female (Joanna)</option>
             <option value="Matthew">US Male (Matthew)</option>
             <option value="Amy">British Female (Amy)</option>
@@ -230,19 +302,33 @@ const Interview = () => {
       )}
 
       {!showNewAvatar && (
-        <button  onClick={handleStart} disabled={countdown !== null} className="mt-4 overflow-hidden p-3 bg-gray-500 text-white border-none rounded-md text-xl font-bold cursor-pointer relative z-10 group">
-        Start Interview
-        <span className="absolute w-36 h-32 -top-8 -left-2 bg-white rotate-12 transform scale-x-0 group-hover:scale-x-100 transition-transform group-hover:duration-500 duration-1000 origin-left" />
-        <span className="absolute w-36 h-32 -top-8 -left-2 bg-blue-700 rotate-12 transform scale-x-0 group-hover:scale-x-90 transition-transform group-hover:duration-700 duration-700 origin-left" />
-        <span className="absolute w-36 h-32 -top-8 -left-2 bg-blue-900 rotate-12 transform scale-x-0 group-hover:scale-x-50 transition-transform group-hover:duration-1000 duration-500 origin-left" />
-        <span className="group-hover:opacity-100 group-hover:duration-1000 duration-100 opacity-0 absolute top-2.5 left-6 z-10 text-center">
-        Ready!
-        </span>
-      </button>
-        
+        <button
+          onClick={handleStart}
+          disabled={countdown !== null}
+          className="mt-4 overflow-hidden p-3 bg-gray-500 text-white border-none rounded-md text-xl font-bold cursor-pointer relative z-10 group"
+        >
+          Start Interview
+          <span className="absolute w-36 h-32 -top-8 -left-2 bg-white rotate-12 transform scale-x-0 group-hover:scale-x-100 transition-transform group-hover:duration-500 duration-1000 origin-left" />
+          <span className="absolute w-36 h-32 -top-8 -left-2 bg-blue-700 rotate-12 transform scale-x-0 group-hover:scale-x-90 transition-transform group-hover:duration-700 duration-700 origin-left" />
+          <span className="absolute w-36 h-32 -top-8 -left-2 bg-blue-900 rotate-12 transform scale-x-0 group-hover:scale-x-50 transition-transform group-hover:duration-1000 duration-500 origin-left" />
+          <span className="group-hover:opacity-100 group-hover:duration-1000 duration-100 opacity-0 absolute top-2.5 left-6 z-10 text-center">
+            Ready!
+          </span>
+        </button>
       )}
       {countdown !== null && countdown !== 0 && (
         <p className="mt-32 text-3xl font-bold text-gray-200"> Starting in {countdown}</p>
+      )}
+      {codeOverlay && (
+        <CodingOverlay
+          codeOverlay={codeOverlay}
+          question={question}
+          pseudoCode={pseudoCode}
+          setPseudoCode={setPseudoCode}
+          timeLeft={timeLeft}
+          setTimeLeft={setTimeLeft}
+          handleSubmit={handleCodeSubmit}
+        />
       )}
       <ResultOverlay
         isOpen={isOpen}
