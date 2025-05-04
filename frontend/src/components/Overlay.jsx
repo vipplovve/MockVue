@@ -31,6 +31,7 @@ export const Overlay = ({ isOpen, onClose, loading, setLoading, setInRole, setSh
 
   const handleInterview = async (role) => {
     try {
+      setShowRoles(false)
       setLoading(true)
       setLoadingMSG('Setting up interview...')
       const { data } = await axiosInstance.post('/genAi/genInterview', {

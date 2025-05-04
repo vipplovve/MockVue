@@ -332,11 +332,11 @@ exports.generateInterview = async (req, res) => {
         "type": "Oral"
       },
       {
-        "question": "Write a pseudocode for a function that reverses a string.",
+        "question": "Write a pseudocode for a function that reverses a string.\\n\\n Sample Input1:\\n 'hello'\\n Sample Output:\\n 'olleh' \\n\\n Sample Input2:\\n 'world'\\n Sample Output:\\n 'dlrow'",
         "type": "Code"
       },
       {
-        "question": "Write a pseudocode for a function that checks if a number is prime.",
+        "question": "Write a pseudocode for a function that checks if a number is prime.\\n\\n Sample Input:\\n 5\\n Sample Output:\\n true \\n\\n Sample Input:\\n 4\\n Sample Output:\\n false",
         "type": "Code"
       }
       ]
@@ -403,19 +403,17 @@ exports.evaluateAnswers = async (req, res) => {
     console.log("Evaluation started...");
 
     await Promise.all(
-      questions.map(async ({ question, answer , type }) => {
-        
-
-          const prompt =
-            type == "Oral"
-              ? `Evaluate the following answer to the given question. Give scores out of 10 for technical accuracy and communication clarity.
+      questions.map(async ({ question, answer, type }) => {
+        const prompt =
+          type == "Oral"
+            ? `Evaluate the following answer to the given question. Give scores out of 10 for technical accuracy and communication clarity.
           \nQuestion: ${question}
           \nAnswer: ${answer}
           \nProvide output in JSON format as { "technical_score": number, "communication_score": number }.
           Do **not** include any Markdown formatting like \`\`\`json.
           Respond **only** with the JSON Object.
           `
-              : `Evaluate the given pseudocode answer to the given question. Give scores out of 10 for technical accuracy and code clarity (as communication_score in json).
+            : `Evaluate the given pseudocode answer to the given question. Give scores out of 10 for technical accuracy and code clarity (as communication_score in json).
            \nQuestion: ${question}
           \nAnswer: ${answer}
           \nProvide output in JSON format as { "technical_score": number, "communication_score": number }.
@@ -433,7 +431,7 @@ exports.evaluateAnswers = async (req, res) => {
           jsonText = jsonText.replace(/```json|```/g, "").trim();
           if (jsonText) {
             try {
-              const parsedData = JSON.parse(jsonText); 
+              const parsedData = JSON.parse(jsonText);
 
               if (
                 parsedData.technical_score !== undefined &&

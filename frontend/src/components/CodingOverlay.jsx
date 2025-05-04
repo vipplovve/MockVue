@@ -35,12 +35,10 @@ const CodingOverlay = ({
   if (!codeOverlay) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-80 text-white flex z-50">
-      <div className="w-1/2 p-6 border-r border-gray-700 overflow-auto">
-        <h2 className="text-xl font-bold mb-4">Coding Question</h2>
-        <p>
-          {question}
-        </p>
+    <div className="fixed inset-0 top-33 left-40 bg-gray-900 bg-gradient-to-b from-gray-950 via-black to-black rounded-4xl bg-opacity-80 text-white flex z-50 w-3/4 h-3/4">
+      <div className="w-1/2 p-6 border-r border-gray-700 overflow-auto ">
+        <h2 className="text-2xl font-bold mb-4">Coding Question</h2>
+        <p className='mt-5 text-xl whitespace-pre-wrap'>{question}</p>
       </div>
 
       <div className="w-1/2 p-6 flex flex-col">

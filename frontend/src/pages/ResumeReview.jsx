@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react'
+import { useContext, useState, useMemo } from 'react'
 import Card from '../components/Card'
 import Progress from '../components/Progress'
 import ScrollArea from '../components/ScrollArea'
@@ -20,6 +20,12 @@ function ResumeReview() {
   })
 
   const { resumeData } = useContext(UserContext)
+
+  const objectUrl = useMemo(() => {
+    if (!file) return null
+    return URL.createObjectURL(file)
+  }, [file])
+
 
   const sectionWeights = {
     education: 10,
@@ -181,7 +187,7 @@ function ResumeReview() {
               <div className="relative h-[600px] w-full">
                 {file ? (
                   <iframe
-                    src={URL.createObjectURL(file)}
+                    src={objectUrl}
                     width="100%"
                     height="600px"
                     title="PDF Viewer"

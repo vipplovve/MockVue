@@ -19,9 +19,9 @@ const Interview = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [scores, setScores] = useState({})
-  const [question, setQuestion] = useState('')
+  const [question, setQuestion] = useState("Write a pseudocode for a function that reverses a string.\n\n Sample Input1:\n 'hello'\n Sample Output:\n 'olleh' \n\n Sample Input2:\n 'world'\n Sample Output:\n 'dlrow'")
   const [pseudoCode, setPseudoCode] = useState('')
-  const [timeLeft, setTimeLeft] = useState(60)
+  const [timeLeft, setTimeLeft] = useState(180)
 
   const recognitionRef = useRef(null)
   const silenceTimerRef = useRef(null)
