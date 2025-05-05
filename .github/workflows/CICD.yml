@@ -1,0 +1,31 @@
+name: CI/CD with Node + Python
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Python Virtual Environment
+      run: |
+        if [ ! -d "venv" ]; then
+          python3 -m venv venv
+        fi
+        source venv/bin/activate
+        pip install --upgrade pip
+
+    - name: Install Node.js Dependencies
+      run: |
+        cd Backend
+        npm install
+
+    - name: Restart App with PM2
+      run: |
+        cd Backend
+        pm2 restart mockapp
