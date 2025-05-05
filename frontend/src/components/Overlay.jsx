@@ -22,7 +22,7 @@ export const Overlay = ({ isOpen, onClose, loading, setLoading, setInRole, setSh
     formData.append('resume', file)
     await axiosInstance.post('/api/parse', formData)
     setLoadingMSG('Categorizing Resume...')
-    const { data } = await axiosInstance.get('/ML/categorize')
+    const { data } = await axiosInstance.get('/genAi/categorize')
     setMainMenu(false)
     setShowRoles(true)
     setRoles(data.roles)

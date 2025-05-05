@@ -6,6 +6,7 @@ const path = require("path");
 const session = require("express-session");
 const passport = require("passport");
 const { spawn } = require("child_process");
+const os = require("os");
 
 require("dotenv").config();
 const {
@@ -106,8 +107,8 @@ io.on("connection", (socket) => {
     if (!fs.existsSync(interviewDir)) {
       fs.mkdirSync(interviewDir, { recursive: true });
     }
-    const pythonPath = path.join(__dirname, "../venv/Scripts/python.exe");
-    let pythonProcess = spawn(pythonPath, [
+     const command = os.platform() === "win32" ? "../venv/Scripts/python.exe" : "../venv/bin/python3";
+    let pythonProcess = spawn(command, [
       path.join(__dirname, "../ML/scripts", "frameAnalyzer.py"),
       interviewId,
     ]);

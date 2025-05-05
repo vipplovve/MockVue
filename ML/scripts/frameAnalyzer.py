@@ -76,7 +76,7 @@ class PoseEmotionEvaluator:
 
 if __name__ == "__main__":
     session_id = sys.argv[1]
-    input_directory = f"D:\\MockVue\\Backend\\uploads\\{session_id}"
+    input_directory = f"uploads\\{session_id}"
     processed_images = set()
     evaluator = PoseEmotionEvaluator()
     scores = []

@@ -4,49 +4,42 @@ const { getSkillsandObjective } = require("./genAi");
 const os = require("os");
 
 exports.categorizeResume = async (req, res) => {
-    const userName = req.user.userName;
-    const user = await User.findOne({
-        userName
-    });
-    const resumeText = user.parsedResume;
-    const inputData = await getSkillsandObjective(resumeText);
-    console.log(inputData)
+  const userName = req.user.userName;
+  const user = await User.findOne({
+    userName,
+  });
+  const resumeText = user.parsedResume;
+  const inputData = await getSkillsandObjective(resumeText);
+  console.log(inputData);
 
-    // const inputData = {
-    //     career_objective: req.body.career_objective,
-    //     skills: req.body.skills
-    // };
+  // const inputData = {
+  //     career_objective: req.body.career_objective,
+  //     skills: req.body.skills
+  // };
 
-    const command = os.platform() === "win32" ? "python" : "venv/bin/python3";
+  const command = os.platform() === "win32" ? "../venv/Scripts/python.exe" : "../venv/bin/python3";
 
-    return res.status(200).json({
-        roles: [
-            "Software Engineer",
-            "Data Scientist",
-        ]
-    })
+  const pythonProcess = spawn(command, ["../ML/scripts/run_models.py"]);
 
-    const pythonProcess = spawn(command, ["../ML/scripts/run_models.py"]); // Suppress error logs
+  pythonProcess.stdin.write(JSON.stringify(inputData));
+  pythonProcess.stdin.end();
 
-    pythonProcess.stdin.write(JSON.stringify(inputData));
-    pythonProcess.stdin.end();
+  let resultData = "";
 
-    let resultData = "";
+  pythonProcess.stdout.on("data", (data) => {
+    console.log("logs:", data.toString());
+    resultData = data.toString();
+  });
+  pythonProcess.stderr.on("data", (data) => {
+    console.error("Error:", data.toString());
+  });
 
-    pythonProcess.stdout.on("data", (data) => {
-        console.log("logs:", data.toString());
-        resultData = data.toString();
-    });
-    pythonProcess.stderr.on("data", (data) => {
-        console.error("Error:", data.toString());
-    });
-
-    pythonProcess.on("close", () => {
-        try {
-            const parsedData = JSON.parse(resultData.trim());
-            res.json(parsedData);
-        } catch (error) {
-            console.error("Error parsing prediction output:", error.message);
-        }
-    });
+  pythonProcess.on("close", () => {
+    try {
+      const parsedData = JSON.parse(resultData.trim());
+      res.json(parsedData);
+    } catch (error) {
+      console.error("Error parsing prediction output:", error.message);
+    }
+  });
 };
