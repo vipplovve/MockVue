@@ -385,6 +385,7 @@ exports.evaluateAnswers = async (req, res) => {
     const { interviewId } = req.body;
 
     const interview = await Interview.findById(interviewId);
+    const videoScore = interview.videoScore;
     if (
       !interview ||
       !interview.questions ||
@@ -406,7 +407,7 @@ exports.evaluateAnswers = async (req, res) => {
       questions.map(async ({ question, answer, type }) => {
         const prompt =
           type == "Oral"
-            ? `Evaluate the following answer to the given question. Give scores out of 10 for technical accuracy and communication clarity.
+            ? `Evaluate the following answer as an expert interviewer to the given question. Give scores out of 10 for technical accuracy and communication clarity.
           \nQuestion: ${question}
           \nAnswer: ${answer}
           \nProvide output in JSON format as { "technical_score": number, "communication_score": number }.
@@ -461,11 +462,13 @@ exports.evaluateAnswers = async (req, res) => {
     console.log({
       tech: avgTechnicalScore.toFixed(2),
       comm: avgCommunicationScore.toFixed(2),
+      videoScore: videoScore.toFixed(2),
     });
 
-    res.json({
+    return res.json({
       tech: avgTechnicalScore.toFixed(2),
       comm: avgCommunicationScore.toFixed(2),
+      videoScore: videoScore.toFixed(2),
     });
   } catch (error) {
     console.error("Internal Server Error:", error);

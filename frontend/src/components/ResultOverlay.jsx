@@ -55,6 +55,11 @@ export const ResultOverlay = ({ isOpen, onClose, loading, setLoading, loadingMSG
                                         <CircularProgressBar score={scores.comm} />
                                         <p className="text-3xl font-bold text-white">{scores.comm}/10</p>
                                     </div>
+                                    <div className="flex flex-col justify-center items-center">
+                                        <p className="text-3xl font-bold text-white">Confidence Level</p>
+                                        <CircularProgressBar score={scores.videoScore} />
+                                        <p className="text-3xl font-bold text-white">{scores.videoScore}/10</p>
+                                    </div>
                                 </div>
                             </div>
                         )}

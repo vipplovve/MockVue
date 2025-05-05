@@ -20,6 +20,7 @@ const interviewSchema = new Schema({
       audioFile: { type: String, default: "" },
     },
   ],
+  videoScore: { type: Number, default: 0.0 },
   createdAt: { type: Date, default: Date.now },
 });
 

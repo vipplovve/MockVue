@@ -6,6 +6,7 @@ import { toast } from 'react-toastify'
 import { ResultOverlay } from '../components/ResultOverlay'
 import axiosInstance from '../utils/axiosInstance'
 import CodingOverlay from '../components/CodingOverlay'
+import AvatarVideo from '../components/AvatarVideo'
 
 const Interview = () => {
   const { InRole } = useContext(UserContext)
@@ -14,12 +15,15 @@ const Interview = () => {
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [isNarrating, setIsNarrating] = useState(false)
   const [showNewAvatar, setShowNewAvatar] = useState(false)
+  const [sendFrames, setSendFrames] = useState(false)
   const [userCaption, setUserCaption] = useState('')
   const [codeOverlay, setCodeOverlay] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [scores, setScores] = useState({})
-  const [question, setQuestion] = useState("Write a pseudocode for a function that reverses a string.\n\n Sample Input1:\n 'hello'\n Sample Output:\n 'olleh' \n\n Sample Input2:\n 'world'\n Sample Output:\n 'dlrow'")
+  const [question, setQuestion] = useState(
+    "Write a pseudocode for a function that reverses a string.\n\n Sample Input1:\n 'hello'\n Sample Output:\n 'olleh' \n\n Sample Input2:\n 'world'\n Sample Output:\n 'dlrow'"
+  )
   const [pseudoCode, setPseudoCode] = useState('')
   const [timeLeft, setTimeLeft] = useState(180)
 
@@ -151,6 +155,7 @@ const Interview = () => {
       })
       newSocket.on('interview-ended', async () => {
         toast.success('Interview Completed !')
+        setSendFrames(false)
         newSocket.emit('end-interview', { interviewId })
         setIsOpen(true)
         setLoading(true)
@@ -201,6 +206,7 @@ const Interview = () => {
   useEffect(() => {
     if (countdown === 0) {
       startInterview()
+      setSendFrames(true)
       return
     }
     if (countdown !== null) {
@@ -267,13 +273,13 @@ const Interview = () => {
         </div>
         {showNewAvatar && (
           <div className="flex flex-col items-center gap-2 absolute transition-transform duration-500 translate-x-[350px] mt-4">
-            <img
-              src="/user.png"
+            <div
               className={`w-64 h-64 border-4 ${
                 isSpeaking ? 'border-blue-800' : 'border-gray-200'
               } rounded-full `}
-              alt="User Avatar"
-            />
+            >
+              <AvatarVideo  socket={ socketRef.current} sendFrames={sendFrames}  interviewId={interviewId}/>
+            </div>
             <p className="text-xl font-bold">You</p>
             <p className="absolute bottom-[-30%] text-lg italic text-gray-200">{userCaption}</p>
           </div>

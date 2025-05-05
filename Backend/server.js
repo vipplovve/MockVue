@@ -5,6 +5,8 @@ const fs = require("fs");
 const path = require("path");
 const session = require("express-session");
 const passport = require("passport");
+const { spawn } = require("child_process");
+
 require("dotenv").config();
 const {
   PollyClient,
@@ -15,7 +17,7 @@ const connectToMongo = require("./config/db");
 const Interview = require("./models/Interview");
 
 connectToMongo();
-
+const pythonProcesses = new Map();
 const app = express();
 
 const server = http.createServer(app);
@@ -61,7 +63,10 @@ const pollyClient = new PollyClient({
 const speakQuestion = async (socket, voiceId, ques) => {
   const command = new SynthesizeSpeechCommand({
     OutputFormat: "mp3",
-    Text: ques.type === "Code" ? "A Question will be displayed on your screen , please read it carefully and write the pseudo code for it" : ques.question,
+    Text:
+      ques.type === "Code"
+        ? "A Question will be displayed on your screen , please read it carefully and write the pseudo code for it"
+        : ques.question,
     VoiceId: voiceId || "Joanna",
   });
   try {
@@ -95,6 +100,25 @@ io.on("connection", (socket) => {
     }
     ques = interview.questions;
     socket.emit("interview-started", { message: "Interview started!" });
+    let output = "";
+
+    const interviewDir = path.join(__dirname, "uploads", interviewId);
+    if (!fs.existsSync(interviewDir)) {
+      fs.mkdirSync(interviewDir, { recursive: true });
+    }
+    const pythonPath = path.join(__dirname, "../venv/Scripts/python.exe");
+    let pythonProcess = spawn(pythonPath, [
+      path.join(__dirname, "../ML/scripts", "frameAnalyzer.py"),
+      interviewId,
+    ]);
+    pythonProcesses.set(interviewId, { process: pythonProcess, output: "0" });
+    pythonProcess.stdout.on("data", (data) => {
+      console.log("Python script avg score:", data.toString());
+      pythonProcesses.set(interviewId, {
+        process: pythonProcess,
+        output: data.toString(),
+      });
+    });
   });
 
   socket.on("next-ques", ({ voiceId }) => {
@@ -103,9 +127,8 @@ io.on("connection", (socket) => {
         question: ques[currentQuestionIndex].question,
       });
       speakQuestion(socket, voiceId, {
-        question:
-          ques[currentQuestionIndex].question,
-          type: "Code",
+        question: ques[currentQuestionIndex].question,
+        type: "Code",
       });
     } else {
       speakQuestion(socket, voiceId, {
@@ -132,7 +155,35 @@ io.on("connection", (socket) => {
   });
 
   socket.on("end-interview", async ({ interviewId }) => {
-    await Interview.findByIdAndUpdate(interviewId, { questions: ques });
+    const processEntry = pythonProcesses.get(interviewId);
+    if (processEntry) {
+      processEntry.process.kill("SIGINT");
+      console.log("output -> ", processEntry.output);
+      const finalOutput = processEntry.output.trim().split("\n").pop();
+      const finalScore = parseFloat(finalOutput) || 0.0;
+      await Interview.findByIdAndUpdate(interviewId, {
+        questions: ques,
+        videoScore: finalScore,
+      });
+      pythonProcesses.delete(interviewId);
+    }
+  });
+  socket.on("video-frame", ({ frameData, interviewId }) => {
+    const base64Data = frameData.replace(/^data:image\/jpeg;base64,/, "");
+
+    const uploadDir = path.join(__dirname, "uploads", interviewId);
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const fileName = `frame_${Date.now()}.jpg`;
+    const filePath = path.join(uploadDir, fileName);
+
+    fs.writeFile(filePath, base64Data, "base64", (err) => {
+      if (err) {
+        console.error("Error saving frame:", err);
+      }
+    });
   });
 
   socket.on("disconnect", () => {
