@@ -60,6 +60,29 @@ export const ResultOverlay = ({ isOpen, onClose, loading, setLoading, loadingMSG
                                         <CircularProgressBar score={scores.videoScore} />
                                         <p className="text-3xl font-bold text-white">{scores.videoScore}/10</p>
                                     </div>
+                                    <div className="flex flex-col justify-center items-center">
+                                        <p className="text-3xl font-bold text-white">Voice Confidence Level</p>
+                                        {(() => {
+                                            console.log('scores.tech:', scores.tech, 'type:', typeof scores.tech);
+                                            console.log('scores.comm:', scores.comm, 'type:', typeof scores.comm);
+                                            console.log('scores.:', scores.comm, 'type:', typeof scores.comm);
+
+                                            const techNum = parseFloat(scores.tech) || 0;
+                                            const commNum = parseFloat(scores.comm) || 0;
+                                            const avgScore = (techNum*1.5 + commNum) / 2;
+                                            const displayScore = isNaN(avgScore) ? 0 : avgScore.toFixed(1);
+
+                                            return (
+                                                <>
+                                                    <CircularProgressBar score={avgScore} />
+                                                    <p className="text-3xl font-bold text-white">
+                                                        {displayScore}/10
+                                                    </p>
+                                                </>
+                                            );
+                                        })()}
+                                    </div>
+
                                 </div>
                             </div>
                         )}
