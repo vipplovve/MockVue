@@ -24,6 +24,7 @@ jobs:
       run: |
         cd Backend
         npm install
+        echo "${{ secrets.BACKEND_ENV }}" > .env
 
     - name: Restart App with PM2
       run: |
