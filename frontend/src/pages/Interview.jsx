@@ -145,7 +145,10 @@ const Interview = () => {
     }
 
     if (!socketRef.current) {
-      const newSocket = io(import.meta.env.VITE_SOCKET_URL)
+      const newSocket = io(import.meta.env.VITE_SOCKET_URL,{
+         path: "/socket.io",
+         transports: ["websocket"]
+      })
       socketRef.current = newSocket
       newSocket.on('interview-started', () => {
         newSocket.emit('next-ques', { voiceId: voiceIdRef.current })
