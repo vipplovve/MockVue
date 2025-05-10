@@ -3,6 +3,7 @@ import UploadFile from '../components/UploadFile'
 import { Overlay } from '../components/Overlay'
 import { toast } from 'react-toastify'
 import UserContext from '../context/user/UserContext'
+import axiosInstance from '../utils/axiosInstance'
 
 const ResumeUploader = () => {
   const [fileName, setFileName] = useState('Choose a file')
@@ -18,6 +19,7 @@ const ResumeUploader = () => {
     const formData = new FormData()
     formData.append('resume', file)
     try {
+      await axiosInstance.post('/api/parse', formData)
       setShowOverlay(true)
     } catch (err) {
       toast.error('Error uploading file. Please try again.')

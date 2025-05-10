@@ -17,7 +17,9 @@ const parseResume = async (req, res) => {
 
   const pythonScript = path.join(__dirname, "../ResumeParser.py");
   const pythonCommand =
-    os.platform() === "win32" ? "python" : "venv/bin/python3";
+    os.platform() === "win32"
+      ? "../venv/Scripts/python.exe"
+      : "../venv/bin/python3";
 
   exec(
     `${pythonCommand} "${pythonScript}" "${newPath}"`,

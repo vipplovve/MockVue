@@ -163,12 +163,14 @@ const Interview = () => {
         setIsOpen(true)
         setLoading(true)
         console.log(1)
-        const { data } = await axiosInstance.post('/genAi/evaluate', {
-          interviewId
-        })
-        console.log(data)
-        setScores(data)
-        setLoading(false)
+        // wait for 2 seconds before sending the request
+        setTimeout(async () => {
+          const { data } = await axiosInstance.post('/genAi/evaluate', {
+            interviewId
+          })
+          setScores(data)
+          setLoading(false)
+        }, 2000)
       })
 
       newSocket.on('tts-chunk', async ({ audio, type, question }) => {
@@ -281,7 +283,11 @@ const Interview = () => {
                 isSpeaking ? 'border-blue-800' : 'border-gray-200'
               } rounded-full `}
             >
-              <AvatarVideo  socket={ socketRef.current} sendFrames={sendFrames}  interviewId={interviewId}/>
+              <AvatarVideo
+                socket={socketRef.current}
+                sendFrames={sendFrames}
+                interviewId={interviewId}
+              />
             </div>
             <p className="text-xl font-bold">You</p>
             <p className="absolute bottom-[-30%] text-lg italic text-gray-200">{userCaption}</p>
