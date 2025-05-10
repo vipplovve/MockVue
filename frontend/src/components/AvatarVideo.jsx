@@ -11,7 +11,9 @@ const AvatarVideo = ({ socket, sendFrames, interviewId }) => {
       .then((stream) => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream
-          videoRef.current.play()
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current.play()
+          }
         }
 
         const canvas = canvasRef.current
@@ -40,12 +42,7 @@ const AvatarVideo = ({ socket, sendFrames, interviewId }) => {
 
   return (
     <div className="flex items-center justify-center w-full h-full">
-      <video
-        ref={videoRef}
-        className="w-full h-full rounded-full object-cover"
-        autoPlay
-        muted
-      />
+      <video ref={videoRef} className="w-full h-full rounded-full object-cover" autoPlay muted />
       <canvas ref={canvasRef} width={256} height={256} className="hidden" />
     </div>
   )

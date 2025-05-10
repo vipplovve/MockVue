@@ -17,12 +17,14 @@ jobs:
         if [ ! -d "venv" ]; then
           python3 -m venv venv
         fi
+        
         source venv/bin/activate
         pip install --upgrade pip
 
     - name: Install Node.js Dependencies
       run: |
         cd Backend
+        pip install -r requirements.txt
         npm install
         echo "${{ secrets.BACKEND_ENV }}" > .env
 

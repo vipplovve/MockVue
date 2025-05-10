@@ -227,10 +227,17 @@ const Interview = () => {
     socketRef.current.emit('start-interview', { interviewId })
   }
 
-  const handleStart = () => {
-    setCountdown(3)
-    setShowNewAvatar(true)
+  const handleStart = async () => {
+    try {
+      await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      setCountdown(3)
+      setShowNewAvatar(true)
+    } catch (err) {
+      console.error('Camera or microphone permission denied:', err)
+      alert('Please allow camera and microphone access to proceed.')
+    }
   }
+  
 
   return (
     <div

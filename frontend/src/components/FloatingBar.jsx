@@ -38,7 +38,7 @@ const FloatingBar = () => {
   );
 };
 
-const routes = ["/", "/upload", "/profile", "/auth"];
+const routes = ["/", "/upload", "/", "/auth"];
 
 const icons = [
     <svg
