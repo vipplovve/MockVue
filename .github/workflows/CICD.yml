@@ -23,6 +23,7 @@ jobs:
 
     - name: Install Node.js Dependencies
       run: |
+        source venv/bin/activate
         cd Backend
         pip install -r requirements.txt
         npm install
