@@ -1,6 +1,6 @@
 # 🎙️ MockVue – AI Interview Buddy  
 
-MockVue is an advanced AI-driven platform designed to revolutionize the way candidates prepare for job interviews. By combining intelligent automation, machine learning, and interactive simulations, MockVue bridges the gap between traditional preparation methods and real-world interview expectations through personalized, immersive, and realistic interview experiences.
+MockVue is an advanced AI-driven interview platform designed to revolutionize the way candidates prepare for job interviews. By combining intelligent automation, machine learning, and interactive simulations, MockVue bridges the gap between traditional preparation methods and real-world interview expectations through personalized, immersive, and realistic interview experiences.
 
 ---
 

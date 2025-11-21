@@ -196,7 +196,7 @@ io.on("connection", (socket) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Hello");
+  res.send("Hello server healthy");
 });
 
 server.listen(process.env.SOCKET_PORT || 3001, () => {

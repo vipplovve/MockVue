@@ -37,7 +37,7 @@ const Auth = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.5 }}
         >
-          <span className="block">Please Login To Continue</span>
+          <span className="block">Please login to continue</span>
         </motion.p>
         <motion.div
           className="mt-8"
